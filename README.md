@@ -6,16 +6,28 @@ This project provides support for OI-FITS (optical interferometry data format) i
 To use this software you must have Yorick (of course) and the
 [Yeti](https://github.com/emmt/Yeti) plugin installed.
 
-## Installation
 
-Copy `oifits.i` in `${Y_SITE}/i/` or in your Yorick directory.
-Then from Yorick:
-```
-    #include "oifits.i"
-```
+## Quick Installation
+
+In short, building and installing the software can be as quick as:
+````
+$ cd $BUILD_DIR
+$ $SRC_DIR/configure
+$ make install
+````
+where `$BUILD_DIR` is the build directory (at your convenience) and
+`$SRC_DIR` is the source directory of the plug-in code.  The build and
+source directories can be the same in which case, call `./configure` to
+configure for building.
+
+More detailled informations are given below.
 
 
 ## Usage
+
+If properly installed, the software exploits the *auto-load* facility of Yorick
+so that there is no needs to `#include "oifits.i"`.
+
 
 ### Dealing with an existing OI-FITS file
 
@@ -116,3 +128,102 @@ To query attributes for **OI_WAVELENGTH** data block:
 * `oifits_get_insname`   - get identifier of corresponding OI_WAVELENGTH
 * `oifits_get_eff_wave`  - get effective wavelength of channel (m)
 * `oifits_get_eff_band`  - get effective bandpass of channel (m)
+
+
+### Creating a new OI-FITS file
+
+In order to create a new OI-FITS file, you first create a new OI-FITS handle in
+Yorick, then you populate it with each datablocks and, finally, you save it to
+the disk.
+
+To create a new OI-FITS instance:
+````
+    ws = oifit_new();
+````
+
+To add datablocks:
+````
+    oifit_insert, ws, db1, db2, ...;
+````
+where `db1`, `db2`, *etc.* are OI-FITS datablocks which have been freshly
+created (see below) or which are borrowed from another OI-FITS instance.
+
+To create a new datablock, the general syntax is:
+````
+    db = oifit_new_DBTYPE(key1=val1, key2=val2, ...);
+````
+where `DBTYPE` is the datablock type (`target`, `array`, `wavelength`,
+`spectrum`, `vis`, `vis2` or `t3`) and all fields of the datablock are passed
+by keyword.  Beware that all fileds must be specified.  See the individual
+documentation of the datablock constructors to figure out which fields are
+required.  For instance:
+````
+    help, oifit_new_vis2;
+````
+
+Optionally, the OI-FITS instance to which insert the new datablock can be
+specified in a datablock constructor:
+````
+    oifit_new_DBTYPE, ws, key1=val1, key2=val2, ...;
+````
+is the same as:
+````
+    oifits_insert, ws, oifit_new_DBTYPE(key1=val1, key2=val2, ...);
+````
+
+There may be any number of datablocks in an OI-FITS instance and they may be
+inserted at any time and in any order.  After inserting the datablocks, it is
+necessary to make sure that the internals of the OI-FITS instance are consistent
+(otherwise some functionalities may not work as expected).  Updating internal
+information is done by:
+````
+    oifit_update, ws;
+````
+
+Saving an OI-FITS instance to a file is as simple as:
+````
+    oifits_save, ws, filename;
+````
+where `filename` is the name of the OI-FITS file.  The `oifits_save` subroutine
+has a number of keywords to add comments, history records or to allow
+overwritting an existing file (which is forbidden by default).
+
+
+## Installation
+
+1. You must have [Yorick](http://yorick.github.com/) installed on your machine.
+
+2. Unpack the software code somewhere or clone the Git repository.
+
+3. Configure for compilation.  The are two possibilities:
+
+   For an **in-place build**, go to the source directory of the software
+   code and run the configuration script:
+   ````
+   $ cd $SRC_DIR
+   $ ./configure
+   ````
+   To see the configuration options, call:
+   ````
+   $ ./configure --help
+   ````
+
+   To build in a **different build directory**, say `$BUILD_DIR`, create the
+   build directory, go to the build directory, and run the configuration
+   script from there:
+   ````
+   $ mkdir -p $BUILD_DIR
+   $ cd $BUILD_DIR
+   $ $SRC_DIR/configure
+   ````
+   where `$SRC_DIR` is the path to the source directory of the plug-in
+   code. To see the configuration options, call:
+   ````
+   $ $SRC_DIR/configure --help
+   ````
+
+4. Install the software in Yorick directories:
+   ````
+   $ make install
+   ````
+

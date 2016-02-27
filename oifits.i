@@ -7,8 +7,7 @@
  *-----------------------------------------------------------------------------
  *
  * Copyright (C) 2005 Éric Thiébaut, Clémentine Béchet, Julien Salmon.
- * Copyright (C) 2006-2010 Éric Thiébaut <thiebaut@obs.univ-lyon1.fr>
- * Copyright (C) 2014 Éric Thiébaut <eric.thiebaut@univ-lyon1.fr>
+ * Copyright (C) 2006-2016 Éric Thiébaut <eric.thiebaut@univ-lyon1.fr>
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free

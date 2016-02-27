@@ -26,7 +26,7 @@ More detailled informations are given below.
 ## Usage
 
 If properly installed, the software exploits the *auto-load* facility of Yorick
-so that there is no needs to `#include "oifits.i"`.
+so that there are no needs to `#include "oifits.i"`.
 
 
 ### Dealing with an existing OI-FITS file
@@ -50,6 +50,10 @@ datablock.  For instance, you can loop over all the datablocks of the handle
 ```
 where `db` is another kind of handle but to a specific datablock this time.
 
+In the loop, the function `oifits_is_data` can be used to check whether a given
+datablock contains interferometric data (true for `OI_VIS`, `OI_VIS2` and
+`OI_T3` datablocks).
+
 There are many functions to access the contents of a given datablock.  Again,
 the OI-FITS structure of a HDU is reproduced and the general syntax to query a
 specific field is:
@@ -57,8 +61,8 @@ specific field is:
     oifits_get_FIELDNAME(ws, db);
 ```
 where `FIELDNAME` is the name of the FITS keyword or OI-FITS column.  For
-instance, to query the effective wavelength of an **OI_WAVELENGTH**,
-**OI_VIS**, **OI_VIS2** or **OI_T3** datablock `db`, just do:
+instance, to query the effective wavelength of an `OI_WAVELENGTH`,
+`OI_VIS`, `OI_VIS2` or `OI_T3` datablock `db`, just do:
 ```
     oifits_get_eff_wave(ws, db);
 ```
@@ -69,7 +73,7 @@ circular references.
 
 * `oifits_get_revn`      - get revision number of the table definition
 
-To query the contents of **OI_VIS**, **OI_VIS2** or **OI_T3** datablocks:
+To query the contents of `OI_VIS`, `OI_VIS2` or `OI_T3` datablocks:
 * `oifits_get_date_obs`  - get UTC start date of observations
 * `oifits_get_time`      - get UTC time of observation (s)
 * `oifits_get_mjd`       - get Modified Julian Date
@@ -93,7 +97,7 @@ To query the contents of **OI_VIS**, **OI_VIS2** or **OI_T3** datablocks:
 * `oifits_get_u2coord`   - get u coordinate of baseline BC of the triangle (m)
 * `oifits_get_v2coord`   - get v coordinate of baseline BC of the triangle (m)
 
-To query attributes for **OI_ARRAY** data block:
+To query attributes for `OI_ARRAY` data block:
 * `oifits_get_arrname`   - get identifier of corresponding OI_ARRAY
 * `oifits_get_frame`     - get coordinate frame
 * `oifits_get_arrayx`    - get X coordinate of array center (m)
@@ -105,7 +109,7 @@ To query attributes for **OI_ARRAY** data block:
 * `oifits_get_diameter`  - get element diameter (m)
 * `oifits_get_staxyz`    - get station coordinate relative to array center (m)
 
-To query attributes for **OI_TARGET** data block:
+To query attributes for `OI_TARGET` data block:
 * `oifits_get_target_id` - get index number of target(s)
 * `oifits_get_target`    - get target names(s)
 * `oifits_get_raep0`     - get R.A. at mean equinox (deg)
@@ -124,7 +128,7 @@ To query attributes for **OI_TARGET** data block:
 * `oifits_get_para_err`  - get error in parallax (deg)
 * `oifits_get_spectyp`   - get spectral type
 
-To query attributes for **OI_WAVELENGTH** data block:
+To query attributes for `OI_WAVELENGTH` data block:
 * `oifits_get_insname`   - get identifier of corresponding OI_WAVELENGTH
 * `oifits_get_eff_wave`  - get effective wavelength of channel (m)
 * `oifits_get_eff_band`  - get effective bandpass of channel (m)
@@ -133,8 +137,8 @@ To query attributes for **OI_WAVELENGTH** data block:
 ### Creating a new OI-FITS file
 
 In order to create a new OI-FITS file, you first create a new OI-FITS handle in
-Yorick, then you populate it with each datablocks and, finally, you save it to
-the disk.
+Yorick, then you populate it with datablocks and, finally, you save it to the
+disk.
 
 To create a new OI-FITS instance:
 ````
@@ -154,7 +158,7 @@ To create a new datablock, the general syntax is:
 ````
 where `DBTYPE` is the datablock type (`target`, `array`, `wavelength`,
 `spectrum`, `vis`, `vis2` or `t3`) and all fields of the datablock are passed
-by keyword.  Beware that all fileds must be specified.  See the individual
+by keyword.  Note that all fields must be specified.  See the individual
 documentation of the datablock constructors to figure out which fields are
 required.  For instance:
 ````

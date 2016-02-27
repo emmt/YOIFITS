@@ -2422,15 +2422,3 @@ func _oifits_init
 
 _oifits_init; /* must be last statement */
 _oifits_init = []; /* avoids calling it again */
-
-/*
- * Local Variables:
- * mode: Yorick
- * tab-width: 8
- * c-basic-offset: 2
- * indent-tabs-mode: nil
- * fill-column: 79
- * coding: utf-8
- * ispell-local-dictionary: "american"
- * End:
- */

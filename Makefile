@@ -36,6 +36,7 @@ DEST_Y_BINDIR=$(DESTDIR)$(Y_BINDIR)
 Y_LIBEXE=$(Y_EXE_HOME)/lib
 Y_GROUP=`cat $(Y_LIBEXE)/install.grp`
 YNSTALL=$(Y_LIBEXE)/install.sh $(Y_GROUP)
+RM=rm -f
 
 # --------------------------------------------- standard targets and rules
 
@@ -43,8 +44,8 @@ default:
 	@echo "nothing to do, type 'make install' to install"
 
 install:
-	@if test -n "$(PKG_I)"; then \
-	  for file in $(PKG_I); do \
+	@if test -n "$(PKG_I)" -o -n "$(PKG_I_EXTRA)"; then \
+	  for file in $(PKG_I) $(PKG_I_EXTRA); do \
 	    echo "Installing $$file in Y_HOME/i"; \
 	    $(YNSTALL) "$$file" $(DEST_Y_HOME)/i; \
 	  done; \
@@ -54,16 +55,32 @@ install:
 	    echo "Installing $$file in Y_HOME/i-start"; \
 	    $(YNSTALL) "$$file" $(DEST_Y_HOME)/i-start; \
 	  done; \
+	fi
+
+uninstall:
+	@if test -n "$(PKG_I)" -o -n "$(PKG_I_EXTRA)"; then \
+	  for file in $(PKG_I) $(PKG_I_EXTRA); do \
+	    base=`basename "$$file"`; \
+	    full="$(DEST_Y_HOME)/i/$$base"; \
+	    if test -f "$$full"; then \
+	      echo "Uninstalling $$base from Y_HOME/i"; \
+	      $(RM) "$$full"; \
+	    fi; \
+	  done; \
 	fi; \
-	if test -n "$(PKG_I_EXTRA)"; then \
-	  for file in $(PKG_I_EXTRA); do \
-	    echo "Installing $$file in Y_HOME/i"; \
-	    $(YNSTALL) "$$file" $(DEST_Y_HOME)/i; \
+	if test -n "$(PKG_I_START)"; then \
+	  for file in $(PKG_I_START); do \
+	    base=`basename "$$file"`; \
+	    full="$(DEST_Y_HOME)/i-start/$$base"; \
+	    if test -f "$$full"; then \
+	      echo "Uninstalling $$base from Y_HOME/i-start"; \
+	      $(RM) "$$full"; \
+	    fi; \
 	  done; \
 	fi
 
 clean:
-	rm -f *~ core* *.core
+	$(RM) *~ core* *.core
 
 oifits-start-tmp.i: ${PKG_I}
 	rm -f $@

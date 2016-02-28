@@ -20,8 +20,8 @@ PKG_I_START= ${srcdir}/oifits-start.i
 # non-pkg.i include files for this package, if any
 PKG_I_EXTRA=${srcdir}/oifits.i
 
-RELEASE_FILES = LICENSE.md Makefile README.md \
-	configure ${PKG_I} ${PKG_I_START} ${PKG_I_EXTRA}
+RELEASE_FILES = LICENSE.md Makefile README.md configure \
+                oifits-start.i oifits.i
 RELEASE_NAME = $(PKG_NAME)-$(RELEASE_VERSION).tar.bz2
 
 # --------------------------------------- standard macros for all packages

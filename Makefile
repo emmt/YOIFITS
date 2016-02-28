@@ -24,31 +24,46 @@ RELEASE_FILES = LICENSE.md Makefile README.md \
 	configure ${PKG_I} ${PKG_I_START} ${PKG_I_EXTRA}
 RELEASE_NAME = $(PKG_NAME)-$(RELEASE_VERSION).tar.bz2
 
+# --------------------------------------- standard macros for all packages
 
+# installation directories
 DESTDIR=
 DEST_Y_SITE=$(DESTDIR)$(Y_EXE_SITE)
 DEST_Y_HOME=$(DESTDIR)$(Y_EXE_HOME)
 DEST_Y_BINDIR=$(DESTDIR)$(Y_BINDIR)
 
+# installation commands
 Y_LIBEXE=$(Y_EXE_HOME)/lib
 Y_GROUP=`cat $(Y_LIBEXE)/install.grp`
 YNSTALL=$(Y_LIBEXE)/install.sh $(Y_GROUP)
 
-# -------------------------------- standard targets and rules (in Makepkg)
+# --------------------------------------------- standard targets and rules
 
 default:
 	@echo "nothing to do, type 'make install' to install"
 
 install:
+	@if test -n "$(PKG_I)"; then \
+	  for file in $(PKG_I); do \
+	    echo "Installing $$file in Y_HOME/i"; \
+	    $(YNSTALL) "$$file" $(DEST_Y_HOME)/i; \
+	  done; \
+	fi; \
 	if test -n "$(PKG_I_START)"; then \
-	  $(YNSTALL) $(PKG_I_START) $(DEST_Y_HOME)/i-start; \
+	  for file in $(PKG_I_START); do \
+	    echo "Installing $$file in Y_HOME/i-start"; \
+	    $(YNSTALL) "$$file" $(DEST_Y_HOME)/i-start; \
+	  done; \
 	fi; \
 	if test -n "$(PKG_I_EXTRA)"; then \
-	  $(YNSTALL) $(PKG_I_EXTRA) $(DEST_Y_SITE)/i; \
+	  for file in $(PKG_I_EXTRA); do \
+	    echo "Installing $$file in Y_HOME/i"; \
+	    $(YNSTALL) "$$file" $(DEST_Y_HOME)/i; \
+	  done; \
 	fi
 
 clean:
-	rm -f *~  core* *.core
+	rm -f *~ core* *.core
 
 oifits-start-tmp.i: ${PKG_I}
 	rm -f $@

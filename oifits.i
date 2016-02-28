@@ -1741,28 +1741,28 @@ func oifits_get_error(master, msg)
 
 func oifits_add_noise(master, method, level)
 /* DOCUMENT oifits_add_noise(master, method, level);
- *     -or- oifits_add_noise, master, method, level;
- *     -or- oifits_add_noise(master, method);
- *     -or- oifits_add_noise, master, method;
- *
- *   Add noise to the measurements in MASTER.  The possible methods
- *   for that are:
- *
- *     METHOD = 1 or "generate" to add noise to noiseless data; the
- *         standard deviation of the noise is taken from the contents of
- *         MASTER; in this case, the LEVEL argument must be nil or omitted.
- *
- *     METHOD = 2 or "snr" to add noise to noiseless data; the standard
- *         deviation of noise is computed to achieve a signal-to-noise
- *         ratio equal to the value of LEVEL.
- *
- *     METHOD = 3 or "amplify" to add noise to noisy data so that the
- *         standard deviation of total noise (existing one plus added one)
- *         is multiplied by the value of LEVEL which must be greater or
- *         equal one.  The standard deviation of the noise prior to the
- *         amplification is taken from the contents of MASTER.
- *
- * SEE ALSO: oifits_random_normal.
+       -or- oifits_add_noise, master, method, level;
+       -or- oifits_add_noise(master, method);
+       -or- oifits_add_noise, master, method;
+
+     Add noise to the measurements in MASTER.  The possible methods for that
+     are:
+
+       METHOD = 1 or "generate" to add noise to noiseless data; the standard
+           deviation of the noise is taken from the contents of MASTER; in this
+           case, the LEVEL argument must be nil or omitted.
+
+       METHOD = 2 or "snr" to add noise to noiseless data; the standard
+           deviation of noise is computed to achieve a signal-to-noise ratio
+           equal to the value of LEVEL.
+
+       METHOD = 3 or "amplify" to add noise to noisy data so that the standard
+           deviation of total noise (existing one plus added one) is multiplied
+           by the value of LEVEL which must be greater or equal one.  The
+           standard deviation of the noise prior to the amplification is taken
+           from the contents of MASTER.
+
+   SEE ALSO: oifits_random_normal.
  */
 {
   /* Setup noisification method. */
@@ -1942,22 +1942,22 @@ local _oifits_get_real_vector, _oifits_get_real_array;
 local _oifits_get_string_scalar, _oifits_get_string_vector;
 local _oifits_get_string_array;
 /* DOCUMENT _oifits_get_integer_scalar(arg, def)
- *     -or- _oifits_get_integer_vector(arg, def)
- *     -or- _oifits_get_integer_array(arg, def)
- *     -or- _oifits_get_real_scalar(arg, def)
- *     -or- _oifits_get_real_vector(arg, def)
- *     -or- _oifits_get_real_array(arg, def)
- *     -or- _oifits_get_string_scalar(arg, def)
- *     -or- _oifits_get_string_vector(arg, def)
- *     -or- _oifits_get_string_array(arg, def)
- *
- *   These functions make ARG into a scalar, a vector or an array of given
- *   type (long for integer and double for real).  If ARG is nil, its value
- *   is given by DEF.  Conversion, if required, is done in-place (only
- *   works if ARG is a symbol not an expression).  These functions return
- *   0 upon success; -1 otherwise.
- *
- * SEE ALSO: is_array, is_scalar, is_vector, structof, oi_check_arg.
+       -or- _oifits_get_integer_vector(arg, def)
+       -or- _oifits_get_integer_array(arg, def)
+       -or- _oifits_get_real_scalar(arg, def)
+       -or- _oifits_get_real_vector(arg, def)
+       -or- _oifits_get_real_array(arg, def)
+       -or- _oifits_get_string_scalar(arg, def)
+       -or- _oifits_get_string_vector(arg, def)
+       -or- _oifits_get_string_array(arg, def)
+
+     These functions make ARG into a scalar, a vector or an array of given
+     type (long for integer and double for real).  If ARG is nil, its value
+     is given by DEF.  Conversion, if required, is done in-place (only
+     works if ARG is a symbol not an expression).  These functions return
+     0 upon success; -1 otherwise.
+
+   SEE ALSO: is_array, is_scalar, is_vector, structof, oi_check_arg.
  */
 
 func _oifits_get_string_scalar(&arg, def)

@@ -232,7 +232,7 @@ as a subroutine:
 
 2. Unpack the software code somewhere or clone the Git repository.
 
-3. Configure for compilation.  The are two possibilities:
+3. Configure for compilation.  There are two possibilities:
 
    For an **in-place build**, go to the source directory, say `$SRC_DIR`, of
    the plug-in code and run the configuration script:
@@ -240,7 +240,7 @@ as a subroutine:
    cd $SRC_DIR
    ./configure
    ````
-   To see the configuration options, call:
+   To see the configuration options, type:
    ````{.sh}
    ./configure --help
    ````
@@ -254,13 +254,18 @@ as a subroutine:
    $SRC_DIR/configure
    ````
    where `$SRC_DIR` is the path to the source directory of the plug-in code.
-   To see the configuration options, call:
+   To see the configuration options, type:
    ````{.sh}
    $SRC_DIR/configure --help
    ````
 
-4. Install the software in Yorick directories:
+4. Compile the code:
+   ````{.sh}
+   make clean
+   make
+   ````
+
+5. Install the plug-in in Yorick directories:
    ````{.sh}
    make install
    ````
-

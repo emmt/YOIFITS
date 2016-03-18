@@ -7,13 +7,12 @@ To use this software you must have Yorick (of course) and the
 [Yeti](https://github.com/emmt/Yeti) plugin installed.
 
 
-## Quick Installation
-
-In short, building and installing the software can be as quick as:
-````
-$ cd $BUILD_DIR
-$ $SRC_DIR/configure
-$ make install
+In short, building and installing the plug-in can be as quick as:
+````{.sh}
+cd $BUILD_DIR
+$SRC_DIR/configure
+make
+make install
 ````
 where `$BUILD_DIR` is the build directory (at your convenience) and
 `$SRC_DIR` is the source directory of the plug-in code.  The build and
@@ -235,33 +234,33 @@ as a subroutine:
 
 3. Configure for compilation.  The are two possibilities:
 
-   For an **in-place build**, go to the source directory of the software
-   code and run the configuration script:
-   ````
-   $ cd $SRC_DIR
-   $ ./configure
+   For an **in-place build**, go to the source directory, say `$SRC_DIR`, of
+   the plug-in code and run the configuration script:
+   ````{.sh}
+   cd $SRC_DIR
+   ./configure
    ````
    To see the configuration options, call:
-   ````
-   $ ./configure --help
+   ````{.sh}
+   ./configure --help
    ````
 
-   To build in a **different build directory**, say `$BUILD_DIR`, create the
-   build directory, go to the build directory, and run the configuration
-   script from there:
+   To compile in a **different build directory**, say `$BUILD_DIR`, create the
+   build directory, go to the build directory and run the configuration
+   script:
+   ````{.sh}
+   mkdir -p $BUILD_DIR
+   cd $BUILD_DIR
+   $SRC_DIR/configure
    ````
-   $ mkdir -p $BUILD_DIR
-   $ cd $BUILD_DIR
-   $ $SRC_DIR/configure
-   ````
-   where `$SRC_DIR` is the path to the source directory of the plug-in
-   code. To see the configuration options, call:
-   ````
-   $ $SRC_DIR/configure --help
+   where `$SRC_DIR` is the path to the source directory of the plug-in code.
+   To see the configuration options, call:
+   ````{.sh}
+   $SRC_DIR/configure --help
    ````
 
 4. Install the software in Yorick directories:
-   ````
-   $ make install
+   ````{.sh}
+   make install
    ````
 

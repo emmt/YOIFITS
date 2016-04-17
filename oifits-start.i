@@ -1,4 +1,4 @@
-autoload, "oifits.i", oifits_insert, oifits_update;
+autoload, "oifits.i", oifits_insert, oifits_update, oifits_merge;
 autoload, "oifits.i", oifits_new, oifits_new_target, oifits_new_array;
 autoload, "oifits.i", oifits_new_wavelength, oifits_new_spectrum;
 autoload, "oifits.i", oifits_new_vis, oifits_new_vis2, oifits_new_t3;

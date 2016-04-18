@@ -240,27 +240,37 @@ func oifits_update(master, errmode=, revn=, force=)
   /* Extract and re-order list of OI-FITS datablocks, then rebuild the list
      of all datablocks. */
   key_list = h_keys(master);
-  if (! numberof(key_list)) return master;
-  db_list = key_list(where(strgrep("^__db[0-9]+$", key_list)(2,) >= 0));
-  if (! (ndb = numberof(db_list))) return master;
-  db_index = array(long, ndb);
-  if (sread(db_list, format="__db%d", db_index) != ndb) {
+  if (is_void(key_list)) return master;
+  key_list = key_list(where(strgrep("^__db[0-9]+$", key_list)(2,) >= 0));
+  if ((ndb = numberof(key_list)) < 1) return master;
+  index_list = array(long, ndb);
+  if (sread(key_list, format="__db%d", index_list) != ndb) {
     error, "bug or corrupted opaque OI-FITS object";
   }
-  db_list = db_list(sort(db_index));
+  i = sort(index_list);
+  index_list = index_list(i);
+  key_list = key_list(i);
 
   /* First pass to get revision numbers and build chained list of
      datablocks. */
-  counter = max(db_index);
+  counter = 0;
   prev = [];
-  db_revn = array(long, ndb);
-  for (j=1 ; j<=ndb ; ++j) {
-    key = db_list(j);
-    db = master(key);
+  revn_list = array(long, ndb);
+  for (i = 1; i <= ndb; ++i) {
+    key = key_list(i);
+    db = h_get(master, key);
     if (! db) {
       /* should never happens, however... */
       h_pop, master, key;
       continue;
+    }
+    if (index_list(i) != ++counter) {
+      /* rename data-block */
+      newkey = swrite(format="__db%d", counter);
+      if (h_has(master, newkey)) error, "this should not happens";
+      h_set, master, newkey, h_pop(master, key);
+      h_set, db, __index = counter, __self = newkey;
+      eq_nocopy, key, newkey;
     }
     if (is_hash(prev)) {
       h_set, prev, __next=key;
@@ -269,39 +279,39 @@ func oifits_update(master, errmode=, revn=, force=)
     }
     h_pop, db, "__next";
     prev = db;
-
+    /* store revision number */
     r = db.revn;
     if (! is_integer(r) || ! is_scalar(r) || r < 1 || r > _OIFITS_REVN_MAX) {
       if (_oifits_error("bad/missing OI_REVN for data block %d", db.__index)) {
         error, _oifits_error_stack(1);
       }
     } else {
-      db_revn(j) = r;
+      revn_list(i) = r;
     }
   }
 
   /* Check new revision number. */
   if (is_void(revn)) {
-    revn = max(db_revn);
+    revn = max(revn_list);
   } else if (! is_integer(revn) || ! is_scalar(revn) || revn < 1) {
     error, "bad value for REVN keyword";
   } else if (revn > _OIFITS_REVN_MAX) {
     error, swrite(format="unsupported version of OI-FITS format (REVN = %d)",
                   revn);
-  } else if (revn < max(db_revn)) {
+  } else if (revn < max(revn_list)) {
     error, "decreasing revision number is not allowed";
   } else {
     revn = long(revn);
   }
 
-  /* Build links and fix datablocks. */
+  /* Build other links and fix datablocks. */
   data_list = [];
   array_list = [];
   target_list = [];
   wavelength_list = [];
   ins_table = h_new();
   arr_table = h_new();
-  for (key = master.__first ; key ; key = db.__next) {
+  for (key = master.__first; key; key = db.__next) {
     db = master(key);
 
     /* Get OI-FITS type and instanciate class-specific datablock members. */
@@ -311,7 +321,7 @@ func oifits_update(master, errmode=, revn=, force=)
       type = long(type);
       class = _OIFITS_DATABLOCK_CLASS(type);
     } else {
-      if (_oifits_error("bad OI-FITS type  for data block %d", db.__index)) {
+      if (_oifits_error("bad OI-FITS type for data block %d", db.__index)) {
         error, _oifits_error_stack(1);
       }
       continue;
@@ -391,23 +401,14 @@ func oifits_update(master, errmode=, revn=, force=)
       error, _oifits_error_stack(1);
     }
   } else if (n > 1) {
-    /* Compact all OI_TARGET datablocks into a single one. */
-    target = master(target_list(1));
-    member_list = _oifits_classdef_column("TARGET", revn).member;
-    m = numberof(member_list);
-    for (j=2 ; j<=n ; ++j) {
-      db = h_pop(master, target_list(j));
-      for (i=1 ; i<=m ; ++i) {
-        member = member_list(j);
-        h_set, target, member, grow(target(member), db(member));
-      }
+    if (_oifits_error("too many OI_TARGET datablocks")) {
+      error, _oifits_error_stack(1);
     }
-    target_list = target_list(1);
   }
 
   /* Fix internal links. */
   nil = [];
-  for (key = master.__first ; key ; key = db.__next) {
+  for (key = master.__first; key; key = db.__next) {
     db = master(key);
     insname = db.insname;
     ins_lnk = (insname ? ins_table(db.insname) : nil);

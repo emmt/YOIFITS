@@ -1215,6 +1215,7 @@ func _oifits_datablock_builder(type, src, extname, hdu)
     comment = table(j).comment;
     multiplier = table(j).multiplier;
     ctype = table(j).ctype;
+    optional = table(j).optional;
 
     /* Prepare for error messages. */
     if (reading) {
@@ -1234,7 +1235,7 @@ func _oifits_datablock_builder(type, src, extname, hdu)
     }
     if (! is_scalar(value)) {
       if (is_void(value)) {
-        if (multiplier &&
+        if (! optional &&
             _oifits_error("missing mandatory %s", what)) {
           return;
         } else {
@@ -1272,6 +1273,7 @@ func _oifits_datablock_builder(type, src, extname, hdu)
     comment = table(j).comment;
     multiplier = table(j).multiplier;
     ctype = table(j).ctype;
+    optional = table(j).optional;
 
     /* Prepare for error messages. */
     if (reading) {
@@ -1400,9 +1402,10 @@ func _oifits_datablock_builder(type, src, extname, hdu)
     for (j = numberof(missing); j >= 1; --j) {
       k = missing(j);
       member = table(k).member;
+      optional = table(k).optional;
       if (member == "flag" && nbaselines >= 1 && nwavelengths >= 1) {
         h_set, db, flag = array(0n, nbaselines, nwavelengths);
-      } else {
+      } else if (! optional){
         if (reading) {
           keyword = table(k).keyword;
           what = swrite(format="column '%s' in %s (HDU %d)",
@@ -2291,14 +2294,14 @@ func _oifits_compare_tables(a, b)
  *   The format of the OI-FITS data block is described in what follows by
  *   strings like:
  *
- *     PART KEYWORD FORMAT UNITS COMMENT
+ *     FLAGS KEYWORD FORMAT UNITS COMMENT
  *
  *   where:
  *
- *     PART = 'H' for header card, 'T' for table column
+ *     FLAGS = 1st bit: optional? 2bit: column (else header keyword)
  *     KEYWORD = keyword for HDU header or column name for table (TTYPE)
  *     FORMAT = nL where n is an integer and L a letter
- *         for the HDU header: 0 means optional and 1 means required
+ *         for the HDU header: n should be 1
  *         for the table: a negative number means abs(n)*NWAVE
  *     UNITS = default units
  *     COMMENT = description
@@ -2309,132 +2312,132 @@ func _oifits_compare_tables(a, b)
 /*-------------------------------------------*/
 
 _OIFITS_CLASSDEF_TARGET_1 = \
-["H OI_REVN    1I -      revision number of the table definition",
- "T TARGET_ID  1I -      index number",
- "T TARGET    16A -      target name",
- "T RAEP0      1D deg    RA at mean equinox",
- "T DECEP0     1D deg    DEC at mean equinox",
- "T EQUINOX    1E yr     equinox",
- "T RA_ERR     1D deg    error in RA at mean equinox",
- "T DEC_ERR    1D deg    error in DEC at mean equino",
- "T SYSVEL     1D m/s    systemic radial velocity",
- "T VELTYP     8A -      reference for radial velocity",
- "T VELDEF     8A -      definition of radial velocity",
- "T PMRA       1D deg/yr proper motion in RA",
- "T PMDEC      1D deg/yr proper motion in DEC",
- "T PMRA_ERR   1D deg/yr error of proper motion in RA",
- "T PMDEC_ERR  1D deg/yr error of proper motion in DEC",
- "T PARALLAX   1E deg    parallax",
- "T PARA_ERR   1E deg    error in parallax",
- "T SPECTYP   16A -      spectral type"];
+["0 OI_REVN    1I -      revision number of the table definition",
+ "2 TARGET_ID  1I -      index number",
+ "2 TARGET    16A -      target name",
+ "2 RAEP0      1D deg    RA at mean equinox",
+ "2 DECEP0     1D deg    DEC at mean equinox",
+ "2 EQUINOX    1E yr     equinox",
+ "2 RA_ERR     1D deg    error in RA at mean equinox",
+ "2 DEC_ERR    1D deg    error in DEC at mean equino",
+ "2 SYSVEL     1D m/s    systemic radial velocity",
+ "2 VELTYP     8A -      reference for radial velocity",
+ "2 VELDEF     8A -      definition of radial velocity",
+ "2 PMRA       1D deg/yr proper motion in RA",
+ "2 PMDEC      1D deg/yr proper motion in DEC",
+ "2 PMRA_ERR   1D deg/yr error of proper motion in RA",
+ "2 PMDEC_ERR  1D deg/yr error of proper motion in DEC",
+ "2 PARALLAX   1E deg    parallax",
+ "2 PARA_ERR   1E deg    error in parallax",
+ "2 SPECTYP   16A -      spectral type"];
 
 /*------------------------------------------*/
 /* OI_ARRAY CLASS DEFINITION (1ST REVISION) */
 /*------------------------------------------*/
 
 _OIFITS_CLASSDEF_ARRAY_1 = \
-["H OI_REVN    1I - revision number of the table definition",
- "H ARRNAME    1A - array name for cross-referencing",
- "H FRAME      1A - coordinate frame",
- "H ARRAYX     1D m array center X-coordinate",
- "H ARRAYY     1D m array center Y-coordinate",
- "H ARRAYZ     1D m array center Z-coordinate",
- "T TEL_NAME  16A - telescope name",
- "T STA_NAME  16A - station name",
- "T STA_INDEX  1I - station index",
- "T DIAMETER   1E m element diameter",
- "T STAXYZ     3D m station coordinates relative to array center"];
+["0 OI_REVN    1I - revision number of the table definition",
+ "0 ARRNAME    1A - array name for cross-referencing",
+ "0 FRAME      1A - coordinate frame",
+ "0 ARRAYX     1D m array center X-coordinate",
+ "0 ARRAYY     1D m array center Y-coordinate",
+ "0 ARRAYZ     1D m array center Z-coordinate",
+ "2 TEL_NAME  16A - telescope name",
+ "2 STA_NAME  16A - station name",
+ "2 STA_INDEX  1I - station index",
+ "2 DIAMETER   1E m element diameter",
+ "2 STAXYZ     3D m station coordinates relative to array center"];
 
 /*-----------------------------------------------*/
 /* OI_WAVELENGTH CLASS DEFINITION (1ST REVISION) */
 /*-----------------------------------------------*/
 
 _OIFITS_CLASSDEF_WAVELENGTH_1 = \
-["H OI_REVN    1I - revision number of the table definition",
- "H INSNAME    1A - name of detector for cross-referencing",
- "T EFF_WAVE   1E m effective wavelength of channel",
- "T EFF_BAND   1E m effective bandpass of channel"];
+["0 OI_REVN    1I - revision number of the table definition",
+ "0 INSNAME    1A - name of detector for cross-referencing",
+ "2 EFF_WAVE   1E m effective wavelength of channel",
+ "2 EFF_BAND   1E m effective bandpass of channel"];
 
 /*----------------------------------------*/
 /* OI_VIS CLASS DEFINITION (1ST REVISION) */
 /*----------------------------------------*/
 
 _OIFITS_CLASSDEF_VIS_1 = \
-["H OI_REVN    1I -   revision number of the table definition",
- "H DATE-OBS   1A -   UTC start date of observations",
- "H ARRNAME    0A -   name of corresponding array",
- "H INSNAME    1A -   name of corresponding detector",
- "T TARGET_ID  1I -   target number as index into OI_TARGET table",
- "T TIME       1D s   UTC time of observation",
- "T MJD        1D day modified Julian Day",
- "T INT_TIME   1D s   integration time",
- "T VISAMP    -1D -   visibility amplitude",
- "T VISAMPERR -1D -   error in visibility amplitude",
- "T VISPHI    -1D deg visibility phase",
- "T VISPHIERR -1D deg error in visibility phase",
- "T UCOORD     1D m   U coordinate of the data",
- "T VCOORD     1D m   V coordinate of the data",
- "T STA_INDEX  2I -   station numbers contributing to the data",
- "T FLAG      -1L -   flag"];
+["0 OI_REVN    1I -   revision number of the table definition",
+ "0 DATE-OBS   1A -   UTC start date of observations",
+ "1 ARRNAME    1A -   name of corresponding array",
+ "0 INSNAME    1A -   name of corresponding detector",
+ "2 TARGET_ID  1I -   target number as index into OI_TARGET table",
+ "2 TIME       1D s   UTC time of observation",
+ "2 MJD        1D day modified Julian Day",
+ "2 INT_TIME   1D s   integration time",
+ "2 VISAMP    -1D -   visibility amplitude",
+ "2 VISAMPERR -1D -   error in visibility amplitude",
+ "2 VISPHI    -1D deg visibility phase",
+ "2 VISPHIERR -1D deg error in visibility phase",
+ "2 UCOORD     1D m   U coordinate of the data",
+ "2 VCOORD     1D m   V coordinate of the data",
+ "2 STA_INDEX  2I -   station numbers contributing to the data",
+ "2 FLAG      -1L -   flag"];
 
 /*-----------------------------------------*/
 /* OI_VIS2 CLASS DEFINITION (1ST REVISION) */
 /*-----------------------------------------*/
 
 _OIFITS_CLASSDEF_VIS2_1 = \
-["H OI_REVN    1I -   revision number of the table definition",
- "H DATE-OBS   1A -   UTC start date of observations",
- "H ARRNAME    0A -   name of corresponding array",
- "H INSNAME    1A -   name of corresponding detector",
- "T TARGET_ID  1I -   target number as index into OI_TARGET table",
- "T TIME       1D s   UTC time of observation",
- "T MJD        1D day modified Julian Day",
- "T INT_TIME   1D s   integration time",
- "T VIS2DATA  -1D -   squared visibility",
- "T VIS2ERR   -1D -   error in squared visibility",
- "T UCOORD     1D m   U coordinate of the data",
- "T VCOORD     1D m   V coordinate of the data",
- "T STA_INDEX  2I -   station numbers contributing to the data",
- "T FLAG      -1L -   flag"];
+["0 OI_REVN    1I -   revision number of the table definition",
+ "0 DATE-OBS   1A -   UTC start date of observations",
+ "1 ARRNAME    1A -   name of corresponding array",
+ "0 INSNAME    1A -   name of corresponding detector",
+ "2 TARGET_ID  1I -   target number as index into OI_TARGET table",
+ "2 TIME       1D s   UTC time of observation",
+ "2 MJD        1D day modified Julian Day",
+ "2 INT_TIME   1D s   integration time",
+ "2 VIS2DATA  -1D -   squared visibility",
+ "2 VIS2ERR   -1D -   error in squared visibility",
+ "2 UCOORD     1D m   U coordinate of the data",
+ "2 VCOORD     1D m   V coordinate of the data",
+ "2 STA_INDEX  2I -   station numbers contributing to the data",
+ "2 FLAG      -1L -   flag"];
 
 /*---------------------------------------*/
 /* OI_T3 CLASS DEFINITION (1ST REVISION) */
 /*---------------------------------------*/
 
 _OIFITS_CLASSDEF_T3_1 = \
-["H OI_REVN    1I -   revision number of the table definition",
- "H DATE-OBS   1A -   UTC start date of observations",
- "H ARRNAME    0A -   name of corresponding array",
- "H INSNAME    1A -   name of corresponding detector",
- "T TARGET_ID  1I -   target number as index into OI_TARGET table",
- "T TIME       1D s   UTC time of observation",
- "T MJD        1D day modified Julian Day",
- "T INT_TIME   1D s   integration time",
- "T T3AMP     -1D -   triple product amplitude",
- "T T3AMPERR  -1D -   error in triple product amplitude",
- "T T3PHI     -1D deg triple product phase",
- "T T3PHIERR  -1D deg error in triple product phase",
- "T U1COORD    1D m   U coordinate of baseline AB of the triangle",
- "T V1COORD    1D m   V coordinate of baseline AB of the triangle",
- "T U2COORD    1D m   U coordinate of baseline BC of the triangle",
- "T V2COORD    1D m   V coordinate of baseline BC of the triangle",
- "T STA_INDEX  3I -   station numbers contributing to the data",
- "T FLAG      -1L -   flag"];
+["0 OI_REVN    1I -   revision number of the table definition",
+ "0 DATE-OBS   1A -   UTC start date of observations",
+ "1 ARRNAME    1A -   name of corresponding array",
+ "0 INSNAME    1A -   name of corresponding detector",
+ "2 TARGET_ID  1I -   target number as index into OI_TARGET table",
+ "2 TIME       1D s   UTC time of observation",
+ "2 MJD        1D day modified Julian Day",
+ "2 INT_TIME   1D s   integration time",
+ "2 T3AMP     -1D -   triple product amplitude",
+ "2 T3AMPERR  -1D -   error in triple product amplitude",
+ "2 T3PHI     -1D deg triple product phase",
+ "2 T3PHIERR  -1D deg error in triple product phase",
+ "2 U1COORD    1D m   U coordinate of baseline AB of the triangle",
+ "2 V1COORD    1D m   V coordinate of baseline AB of the triangle",
+ "2 U2COORD    1D m   U coordinate of baseline BC of the triangle",
+ "2 V2COORD    1D m   V coordinate of baseline BC of the triangle",
+ "2 STA_INDEX  3I -   station numbers contributing to the data",
+ "2 FLAG      -1L -   flag"];
 
 /*---------------------------------------------*/
 /* OI_SPECTRUM CLASS DEFINITION (1ST REVISION) */
 /*---------------------------------------------*/
 
 _OIFITS_CLASSDEF_SPECTRUM_1 = \
-["H OI_REVN    1I -   revision number of the table definition",
- "H DATE-OBS   1A -   UTC start date of observations",
- "H INSNAME    1A -   name of corresponding detector",
-/*"H FOV        1D -   area of sky over which flux is integrated",*/
- "T TARGET_ID  1I -   target number as index into OI_TARGET table",
- "T MJD        1D day modified Julian Day",
- "T INT_TIME   1D s   integration time",
- "T FLUXDATA  -1D -   flux",
- "T FLUXERR   -1D -   flux error"];
+["0 OI_REVN    1I -   revision number of the table definition",
+ "0 DATE-OBS   1A -   UTC start date of observations",
+ "0 INSNAME    1A -   name of corresponding detector",
+/*"0 FOV        1D -   area of sky over which flux is integrated",*/
+ "2 TARGET_ID  1I -   target number as index into OI_TARGET table",
+ "2 MJD        1D day modified Julian Day",
+ "2 INT_TIME   1D s   integration time",
+ "2 FLUXDATA  -1D -   flux",
+ "2 FLUXERR   -1D -   flux error"];
 
 /*---------------------------------------------------------------------------*/
 /* INITIALIZATION OF OI-FITS TABLES AND CONSTANTS */
@@ -2481,6 +2484,7 @@ func oifits_get_type(db) { return db.__type; }
 struct _oifits_classdef {
   string member, keyword, letter, units, comment;
   long multiplier, ctype;
+  int optional;
 };
 local _oifits_classdef;
 local _OIFITS_CLASSDEF_FORMAT;
@@ -2555,7 +2559,6 @@ func _oifits_init
 
   /* Parse class definition tables. */
   local table;
-  part2code = h_new(h=1, H=1, t=2, T=2); /* fast decoder for PART letter */
   letter2code = h_new(l=_OIFITS_CTYPE_LOGICAL,
                       L=_OIFITS_CTYPE_LOGICAL,
                       i=_OIFITS_CTYPE_INTEGER,
@@ -2569,8 +2572,8 @@ func _oifits_init
                       a=_OIFITS_CTYPE_STRING,
                       A=_OIFITS_CTYPE_STRING); /* fast decoder for
                                                   CTYPE letter */
-  format = "%s %s %d%s %s %[^\n]"; /* to decode a single definition line */
-  part = string();
+  format = "%d %s %d%s %s %[^\n]"; /* to decode a single definition line */
+  flags = long();
   keyword = string();
   letter = string();
   multiplier = long();
@@ -2584,14 +2587,13 @@ func _oifits_init
       if (is_void(table)) continue;
       number = numberof(table);
       cdef = array(_oifits_classdef, number);
-      code = array(long, number);
+      header = array(long, number);
       mdef = h_new(); /* to check for multiple definitions of members */
       kdef = h_new(); /* to check for multiple definitions of keywords */
       for (j = 1; j <= number; ++j) {
         /* Parse header description table. */
-        if (sread(table(j), format=format, part, keyword, multiplier,
+        if (sread(table(j), format=format, flags, keyword, multiplier,
                   letter, units, comment) < 5
-            || is_void((k = part2code(part)))
             || is_void((ctype = letter2code(letter)))
             || strlen(letter) != 1) {
           error, swrite(format="syntax error in line %d of table %s",
@@ -2615,31 +2617,20 @@ func _oifits_init
         } else {
           h_set, kdef, keyword, 1;
         }
-        if (j == 1 && ((part != "H" && part != "h")
-                       || member != "revn"
-                       || keyword != "OI_REVN"
-                       || multiplier != 1
-                       || (letter != "I" && letter != "i")
-                       || units != "-")) {
-          error, swrite(format="bad first line in table %s (OI_REVN)",
-                        j, tablename);
-        }
-        if ((k == 1 /* header */ && (multiplier < 0 || multiplier > 1)) ||
-            (k == 2 /* column */ && multiplier == 0)) {
+        in_header = ((flags & 2) == 0);
+        if ((in_header && multiplier != 1) ||
+            (! in_header && multiplier == 0)) {
           error, swrite(format="illegal multiplier line %d of table %s",
                         j, tablename);
         }
-        code(j) = k;
-        cdef(j).member = member;
-        cdef(j).keyword = keyword;
-        cdef(j).multiplier = multiplier;
-        cdef(j).letter = letter;
-        cdef(j).units = units;
-        cdef(j).comment = comment;
-        cdef(j).ctype = ctype;
+        header(j) = in_header;
+        cdef(j) =_oifits_classdef(member=member, keyword=keyword,
+                                  letter=letter, units=units,
+                                  comment=comment, multiplier=multiplier,
+                                  ctype=ctype, optional = ((flags & 1) != 0));
       }
-      symbol_set, tablename, [&cdef(where(code == 1)),
-                              &cdef(where(code == 2))];
+      symbol_set, tablename, [&cdef(where(header)),
+                              &cdef(where(! header))];
     }
   }
 }

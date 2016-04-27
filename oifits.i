@@ -2291,12 +2291,11 @@ func _oifits_compare_tables(a, b)
  *   The format of the OI-FITS data block is described in what follows by
  *   strings like:
  *
- *     PART MEMBER KEYWORD FORMAT UNITS COMMENT
+ *     PART KEYWORD FORMAT UNITS COMMENT
  *
  *   where:
  *
  *     PART = 'H' for header card, 'T' for table column
- *     MEMBER = name of member if hash table / structure
  *     KEYWORD = keyword for HDU header or column name for table (TTYPE)
  *     FORMAT = nL where n is an integer and L a letter
  *         for the HDU header: 0 means optional and 1 means required
@@ -2310,132 +2309,132 @@ func _oifits_compare_tables(a, b)
 /*-------------------------------------------*/
 
 _OIFITS_CLASSDEF_TARGET_1 = \
-["H revn      OI_REVN    1I -      revision number of the table definition",
- "T target_id TARGET_ID  1I -      index number",
- "T target    TARGET    16A -      target name",
- "T raep0     RAEP0      1D deg    RA at mean equinox",
- "T decep0    DECEP0     1D deg    DEC at mean equinox",
- "T equinox   EQUINOX    1E yr     equinox",
- "T ra_err    RA_ERR     1D deg    error in RA at mean equinox",
- "T dec_err   DEC_ERR    1D deg    error in DEC at mean equino",
- "T sysvel    SYSVEL     1D m/s    systemic radial velocity",
- "T veltyp    VELTYP     8A -      reference for radial velocity",
- "T veldef    VELDEF     8A -      definition of radial velocity",
- "T pmra      PMRA       1D deg/yr proper motion in RA",
- "T pmdec     PMDEC      1D deg/yr proper motion in DEC",
- "T pmra_err  PMRA_ERR   1D deg/yr error of proper motion in RA",
- "T pmdec_err PMDEC_ERR  1D deg/yr error of proper motion in DEC",
- "T parallax  PARALLAX   1E deg    parallax",
- "T para_err  PARA_ERR   1E deg    error in parallax",
- "T spectyp   SPECTYP   16A -      spectral type"];
+["H OI_REVN    1I -      revision number of the table definition",
+ "T TARGET_ID  1I -      index number",
+ "T TARGET    16A -      target name",
+ "T RAEP0      1D deg    RA at mean equinox",
+ "T DECEP0     1D deg    DEC at mean equinox",
+ "T EQUINOX    1E yr     equinox",
+ "T RA_ERR     1D deg    error in RA at mean equinox",
+ "T DEC_ERR    1D deg    error in DEC at mean equino",
+ "T SYSVEL     1D m/s    systemic radial velocity",
+ "T VELTYP     8A -      reference for radial velocity",
+ "T VELDEF     8A -      definition of radial velocity",
+ "T PMRA       1D deg/yr proper motion in RA",
+ "T PMDEC      1D deg/yr proper motion in DEC",
+ "T PMRA_ERR   1D deg/yr error of proper motion in RA",
+ "T PMDEC_ERR  1D deg/yr error of proper motion in DEC",
+ "T PARALLAX   1E deg    parallax",
+ "T PARA_ERR   1E deg    error in parallax",
+ "T SPECTYP   16A -      spectral type"];
 
 /*------------------------------------------*/
 /* OI_ARRAY CLASS DEFINITION (1ST REVISION) */
 /*------------------------------------------*/
 
 _OIFITS_CLASSDEF_ARRAY_1 = \
-["H revn      OI_REVN    1I - revision number of the table definition",
- "H arrname   ARRNAME    1A - array name for cross-referencing",
- "H frame     FRAME      1A - coordinate frame",
- "H arrayx    ARRAYX     1D m array center X-coordinate",
- "H arrayy    ARRAYY     1D m array center Y-coordinate",
- "H arrayz    ARRAYZ     1D m array center Z-coordinate",
- "T tel_name  TEL_NAME  16A - telescope name",
- "T sta_name  STA_NAME  16A - station name",
- "T sta_index STA_INDEX  1I - station index",
- "T diameter  DIAMETER   1E m element diameter",
- "T staxyz    STAXYZ     3D m station coordinates relative to array center"];
+["H OI_REVN    1I - revision number of the table definition",
+ "H ARRNAME    1A - array name for cross-referencing",
+ "H FRAME      1A - coordinate frame",
+ "H ARRAYX     1D m array center X-coordinate",
+ "H ARRAYY     1D m array center Y-coordinate",
+ "H ARRAYZ     1D m array center Z-coordinate",
+ "T TEL_NAME  16A - telescope name",
+ "T STA_NAME  16A - station name",
+ "T STA_INDEX  1I - station index",
+ "T DIAMETER   1E m element diameter",
+ "T STAXYZ     3D m station coordinates relative to array center"];
 
 /*-----------------------------------------------*/
 /* OI_WAVELENGTH CLASS DEFINITION (1ST REVISION) */
 /*-----------------------------------------------*/
 
 _OIFITS_CLASSDEF_WAVELENGTH_1 = \
-["H revn      OI_REVN    1I - revision number of the table definition",
- "H insname   INSNAME    1A - name of detector for cross-referencing",
- "T eff_wave  EFF_WAVE   1E m effective wavelength of channel",
- "T eff_band  EFF_BAND   1E m effective bandpass of channel"];
+["H OI_REVN    1I - revision number of the table definition",
+ "H INSNAME    1A - name of detector for cross-referencing",
+ "T EFF_WAVE   1E m effective wavelength of channel",
+ "T EFF_BAND   1E m effective bandpass of channel"];
 
 /*----------------------------------------*/
 /* OI_VIS CLASS DEFINITION (1ST REVISION) */
 /*----------------------------------------*/
 
 _OIFITS_CLASSDEF_VIS_1 = \
-["H revn      OI_REVN    1I -   revision number of the table definition",
- "H date_obs  DATE-OBS   1A -   UTC start date of observations",
- "H arrname   ARRNAME    0A -   name of corresponding array",
- "H insname   INSNAME    1A -   name of corresponding detector",
- "T target_id TARGET_ID  1I -   target number as index into OI_TARGET table",
- "T time      TIME       1D s   UTC time of observation",
- "T mjd       MJD        1D day modified Julian Day",
- "T int_time  INT_TIME   1D s   integration time",
- "T visamp    VISAMP    -1D -   visibility amplitude",
- "T visamperr VISAMPERR -1D -   error in visibility amplitude",
- "T visphi    VISPHI    -1D deg visibility phase",
- "T visphierr VISPHIERR -1D deg error in visibility phase",
- "T ucoord    UCOORD     1D m   U coordinate of the data",
- "T vcoord    VCOORD     1D m   V coordinate of the data",
- "T sta_index STA_INDEX  2I -   station numbers contributing to the data",
- "T flag      FLAG      -1L -   flag"];
+["H OI_REVN    1I -   revision number of the table definition",
+ "H DATE-OBS   1A -   UTC start date of observations",
+ "H ARRNAME    0A -   name of corresponding array",
+ "H INSNAME    1A -   name of corresponding detector",
+ "T TARGET_ID  1I -   target number as index into OI_TARGET table",
+ "T TIME       1D s   UTC time of observation",
+ "T MJD        1D day modified Julian Day",
+ "T INT_TIME   1D s   integration time",
+ "T VISAMP    -1D -   visibility amplitude",
+ "T VISAMPERR -1D -   error in visibility amplitude",
+ "T VISPHI    -1D deg visibility phase",
+ "T VISPHIERR -1D deg error in visibility phase",
+ "T UCOORD     1D m   U coordinate of the data",
+ "T VCOORD     1D m   V coordinate of the data",
+ "T STA_INDEX  2I -   station numbers contributing to the data",
+ "T FLAG      -1L -   flag"];
 
 /*-----------------------------------------*/
 /* OI_VIS2 CLASS DEFINITION (1ST REVISION) */
 /*-----------------------------------------*/
 
 _OIFITS_CLASSDEF_VIS2_1 = \
-["H revn      OI_REVN    1I -   revision number of the table definition",
- "H date_obs  DATE-OBS   1A -   UTC start date of observations",
- "H arrname   ARRNAME    0A -   name of corresponding array",
- "H insname   INSNAME    1A -   name of corresponding detector",
- "T target_id TARGET_ID  1I -   target number as index into OI_TARGET table",
- "T time      TIME       1D s   UTC time of observation",
- "T mjd       MJD        1D day modified Julian Day",
- "T int_time  INT_TIME   1D s   integration time",
- "T vis2data  VIS2DATA  -1D -   squared visibility",
- "T vis2err   VIS2ERR   -1D -   error in squared visibility",
- "T ucoord    UCOORD     1D m   U coordinate of the data",
- "T vcoord    VCOORD     1D m   V coordinate of the data",
- "T sta_index STA_INDEX  2I -   station numbers contributing to the data",
- "T flag      FLAG      -1L -   flag"];
+["H OI_REVN    1I -   revision number of the table definition",
+ "H DATE-OBS   1A -   UTC start date of observations",
+ "H ARRNAME    0A -   name of corresponding array",
+ "H INSNAME    1A -   name of corresponding detector",
+ "T TARGET_ID  1I -   target number as index into OI_TARGET table",
+ "T TIME       1D s   UTC time of observation",
+ "T MJD        1D day modified Julian Day",
+ "T INT_TIME   1D s   integration time",
+ "T VIS2DATA  -1D -   squared visibility",
+ "T VIS2ERR   -1D -   error in squared visibility",
+ "T UCOORD     1D m   U coordinate of the data",
+ "T VCOORD     1D m   V coordinate of the data",
+ "T STA_INDEX  2I -   station numbers contributing to the data",
+ "T FLAG      -1L -   flag"];
 
 /*---------------------------------------*/
 /* OI_T3 CLASS DEFINITION (1ST REVISION) */
 /*---------------------------------------*/
 
 _OIFITS_CLASSDEF_T3_1 = \
-["H revn      OI_REVN    1I -   revision number of the table definition",
- "H date_obs  DATE-OBS   1A -   UTC start date of observations",
- "H arrname   ARRNAME    0A -   name of corresponding array",
- "H insname   INSNAME    1A -   name of corresponding detector",
- "T target_id TARGET_ID  1I -   target number as index into OI_TARGET table",
- "T time      TIME       1D s   UTC time of observation",
- "T mjd       MJD        1D day modified Julian Day",
- "T int_time  INT_TIME   1D s   integration time",
- "T t3amp     T3AMP     -1D -   triple product amplitude",
- "T t3amperr  T3AMPERR  -1D -   error in triple product amplitude",
- "T t3phi     T3PHI     -1D deg triple product phase",
- "T t3phierr  T3PHIERR  -1D deg error in triple product phase",
- "T u1coord   U1COORD    1D m   U coordinate of baseline AB of the triangle",
- "T v1coord   V1COORD    1D m   V coordinate of baseline AB of the triangle",
- "T u2coord   U2COORD    1D m   U coordinate of baseline BC of the triangle",
- "T v2coord   V2COORD    1D m   V coordinate of baseline BC of the triangle",
- "T sta_index STA_INDEX  3I -   station numbers contributing to the data",
- "T flag      FLAG      -1L -   flag"];
+["H OI_REVN    1I -   revision number of the table definition",
+ "H DATE-OBS   1A -   UTC start date of observations",
+ "H ARRNAME    0A -   name of corresponding array",
+ "H INSNAME    1A -   name of corresponding detector",
+ "T TARGET_ID  1I -   target number as index into OI_TARGET table",
+ "T TIME       1D s   UTC time of observation",
+ "T MJD        1D day modified Julian Day",
+ "T INT_TIME   1D s   integration time",
+ "T T3AMP     -1D -   triple product amplitude",
+ "T T3AMPERR  -1D -   error in triple product amplitude",
+ "T T3PHI     -1D deg triple product phase",
+ "T T3PHIERR  -1D deg error in triple product phase",
+ "T U1COORD    1D m   U coordinate of baseline AB of the triangle",
+ "T V1COORD    1D m   V coordinate of baseline AB of the triangle",
+ "T U2COORD    1D m   U coordinate of baseline BC of the triangle",
+ "T V2COORD    1D m   V coordinate of baseline BC of the triangle",
+ "T STA_INDEX  3I -   station numbers contributing to the data",
+ "T FLAG      -1L -   flag"];
 
 /*---------------------------------------------*/
 /* OI_SPECTRUM CLASS DEFINITION (1ST REVISION) */
 /*---------------------------------------------*/
 
 _OIFITS_CLASSDEF_SPECTRUM_1 = \
-["H revn      OI_REVN    1I -   revision number of the table definition",
- "H date_obs  DATE-OBS   1A -   UTC start date of observations",
- "H insname   INSNAME    1A -   name of corresponding detector",
-/*"H fov       FOV        1D -   area of sky over which flux is integrated",*/
- "T target_id TARGET_ID  1I -   target number as index into OI_TARGET table",
- "T mjd       MJD        1D day modified Julian Day",
- "T int_time  INT_TIME   1D s   integration time",
- "T fluxdata  FLUXDATA  -1D -   flux",
- "T fluxerr   FLUXERR   -1D -   flux error"];
+["H OI_REVN    1I -   revision number of the table definition",
+ "H DATE-OBS   1A -   UTC start date of observations",
+ "H INSNAME    1A -   name of corresponding detector",
+/*"H FOV        1D -   area of sky over which flux is integrated",*/
+ "T TARGET_ID  1I -   target number as index into OI_TARGET table",
+ "T MJD        1D day modified Julian Day",
+ "T INT_TIME   1D s   integration time",
+ "T FLUXDATA  -1D -   flux",
+ "T FLUXERR   -1D -   flux error"];
 
 /*---------------------------------------------------------------------------*/
 /* INITIALIZATION OF OI-FITS TABLES AND CONSTANTS */
@@ -2546,6 +2545,14 @@ func _oifits_init
     symbol_set, "OIFITS_TYPE_"+class, type;
   }
 
+  /* Character conversion table. */
+  convert = array(char, 256);
+  convert('_') = '_';
+  convert('-') = '_';
+  convert('0':'9') = indgen('0':'9');
+  convert('a':'z') = indgen('a':'z');
+  convert('A':'Z') = indgen('a':'z');
+
   /* Parse class definition tables. */
   local table;
   part2code = h_new(h=1, H=1, t=2, T=2); /* fast decoder for PART letter */
@@ -2562,9 +2569,8 @@ func _oifits_init
                       a=_OIFITS_CTYPE_STRING,
                       A=_OIFITS_CTYPE_STRING); /* fast decoder for
                                                   CTYPE letter */
-  format = "%s %s %s %d%s %s %[^\n]"; /* to decode a single definition line */
+  format = "%s %s %d%s %s %[^\n]"; /* to decode a single definition line */
   part = string();
-  member = string();
   keyword = string();
   letter = string();
   multiplier = long();
@@ -2583,7 +2589,7 @@ func _oifits_init
       kdef = h_new(); /* to check for multiple definitions of keywords */
       for (j = 1; j <= number; ++j) {
         /* Parse header description table. */
-        if (sread(table(j), format=format, part, member, keyword, multiplier,
+        if (sread(table(j), format=format, part, keyword, multiplier,
                   letter, units, comment) < 5
             || is_void((k = part2code(part)))
             || is_void((ctype = letter2code(letter)))
@@ -2591,6 +2597,8 @@ func _oifits_init
           error, swrite(format="syntax error in line %d of table %s",
                         j, tablename);
         }
+        member = strchar(convert(strchar(keyword)(1:-1)));
+        if (member == "oi_revn") member = "revn";
         if (strpart(member, -5:0) == "_units") {
           error, swrite(format="illegal member name '%s' at line %d of table %s",
                         member, j, tablename);

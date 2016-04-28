@@ -204,8 +204,8 @@ func oifits_update(master, errmode=, revn=, force=)
 
      Update internals of OI-FITS main object MASTER and return it.
 
-     If keyword ERRMODE is true, any inconsistency will be printed out
-     and an error will be raised.
+     If keyword ERRMODE is true, any inconsistency will be printed out and an
+     error will be raised.  The default is ERRMODE=1.
 
      Keyword REVN can be set to the value of the new revision number of
      OI-FITS format.
@@ -236,6 +236,7 @@ func oifits_update(master, errmode=, revn=, force=)
   local _oifits_error_count;
   _oifits_error_count = 0;
   _oifits_error_stack = h_pop(master, "__errmsg");
+  if (is_void(errmode)) errmode = 1n;
 
   /* Extract and re-order list of OI-FITS datablocks, then rebuild the list
      of all datablocks. */
@@ -1129,6 +1130,78 @@ func oifits_new_spectrum(master,
   return db;
 }
 
+local oifits_new_flux;
+/* DOCUMENT db = oifits_new_flux(key1 = value1, ...);
+       -or- db = oifits_new_flux(master, key1 = value1, ...);
+       -or- oifits_new_flux, master, key1 = value1, ...;
+
+     Creates a new OI-FITS data-block of type OI_FLUX (spectral energy
+     distribution).  If MASTER is non-nil, it must be an existing OI-FITS
+     master instance to store the new data-block (in this case the returned
+     value can be ignored).  All members of DB are specified by keywords (KEY1
+     = VALUE1, KEY2 = VALUE2, etc).
+
+     As of revision 1 of OI-FITS standard, the members of an OI_FLUX
+     data-block are:
+
+     Keyword    Units   Description
+     --------------------------------------------------------------
+     revn               revision number (default is last version)
+     date_obs           UTC start date of observations
+     insname            name of corresponding detector
+     target_id          target number as index into OI_TARGET table
+     mjd        day     modified Julian Day
+     int_time   s       integration time
+     flux               target spectral energy distribution
+     fluxerr            flux error
+     --------------------------------------------------------------
+
+   SEE ALSO: oifits_insert, oifits_get, oifits_new, oifits_new_array,
+             oifits_new_target, oifits_new_wavelength. */
+func oifits_new_flux(master,
+                     revn=,
+                     date_obs=,
+                     insname=,
+                     corrname=,
+                     fov=,
+                     fovtype=,
+                     calstat=,
+                     target_id=,
+                     mjd=,
+                     int_time=,
+                     fluxdata=,
+                     fluxerr=,
+                     corrindx_fluxdata=,
+                     sta_index=,
+                     flag=)
+{
+  local _oifits_error_stack;
+  _oifits_on_error = _oifits_on_error_stop;
+  db = _oifits_datablock_builder(OIFITS_TYPE_FLUX,
+                                 h_new(revn = revn,
+                                       date_obs = date_obs,
+                                       insname = insname,
+                                       corrname = corrname,
+                                       fov = fov,
+                                       fovtype = fovtype,
+                                       calstat = calstat,
+                                       target_id = target_id,
+                                       mjd = mjd,
+                                       int_time = int_time,
+                                       fluxdata = fluxdata,
+                                       fluxerr = fluxerr,
+                                       corrindx_fluxdata = corrindx_fluxdata,
+                                       sta_index = sta_index,
+                                       flag = flag));
+  if (numberof(_oifits_error_stack)) {
+    error, _oifits_error_stack(1);
+  }
+  if (master) {
+    oifits_insert, master, db;
+  }
+  return db;
+}
+
 /* NOTE: To simplify the code of the instance builder, we heavily rely on
    class definition tables.  This means that consistency of these tables is
    assumed and must be asserted at initialization time when _oifits_init is
@@ -1184,7 +1257,8 @@ func _oifits_datablock_builder(type, src, extname, hdu)
   class = _OIFITS_DATABLOCK_CLASS(type);
   is_data = (type == OIFITS_TYPE_VIS ||
              type == OIFITS_TYPE_VIS2 ||
-             type == OIFITS_TYPE_T3);
+             type == OIFITS_TYPE_T3 ||
+             type == OIFITS_TYPE_FLUX);
 
   /* If datablock contents is to be read from OI-FITS file, read all
      the columns of the binary table and build a hash table for fast
@@ -1209,13 +1283,14 @@ func _oifits_datablock_builder(type, src, extname, hdu)
   eq_nocopy, table, _oifits_classdef_header(class, revn);
   for (j = numberof(table); j >= 2 /* omit 1st line, i.e. OI_REVN */; --j) {
     /* Parse table entry. */
-    member = table(j).member;
-    keyword = table(j).keyword;
-    units = table(j).units;
-    comment = table(j).comment;
-    multiplier = table(j).multiplier;
-    ctype = table(j).ctype;
-    optional = table(j).optional;
+    entry = table(j);
+    member = entry.member;
+    keyword = entry.keyword;
+    units = entry.units;
+    comment = entry.comment;
+    multiplier = entry.multiplier;
+    ctype = entry.ctype;
+    optional = entry.optional;
 
     /* Prepare for error messages. */
     if (reading) {
@@ -1235,8 +1310,7 @@ func _oifits_datablock_builder(type, src, extname, hdu)
     }
     if (! is_scalar(value)) {
       if (is_void(value)) {
-        if (! optional &&
-            _oifits_error("missing mandatory %s", what)) {
+        if (! optional && _oifits_error("missing mandatory %s", what)) {
           return;
         } else {
           continue;
@@ -1267,21 +1341,20 @@ func _oifits_datablock_builder(type, src, extname, hdu)
   missing = array(int,  numberof(table));
   for (j = 1 ; j <= numberof(table); ++j) { /* <=== BEWARE ORDER IS IMPORTANT!!! */
     /* Parse table entry. */
-    member = table(j).member;
-    keyword = table(j).keyword;
-    units = table(j).units;
-    comment = table(j).comment;
-    multiplier = table(j).multiplier;
-    ctype = table(j).ctype;
-    optional = table(j).optional;
+    entry = table(j);
+    member = entry.member;
+    keyword = entry.keyword;
+    units = entry.units;
+    comment = entry.comment;
+    multiplier = entry.multiplier;
+    ctype = entry.ctype;
+    optional = entry.optional;
 
     /* Prepare for error messages. */
     if (reading) {
-      what = swrite(format="column '%s' in %s (HDU %d)",
-                    keyword, extname, hdu);
+      what = swrite(format="column '%s' in %s (HDU %d)", keyword, extname, hdu);
     } else {
-      what = swrite(format="member '%s' for %s",
-                    member, class);
+      what = swrite(format="member '%s' for %s", member, class);
     }
 
     /* Get value of field. */
@@ -1476,9 +1549,9 @@ func oifits_load(filename, quiet=, errmode=)
   /* Setup for error management. */
   local _oifits_error_stack;
   _oifits_on_error = _oifits_on_error_push;
+  if (is_void(errmode)) errmode = 1n;
 
   /* Load the data from the FITS file. */
-  if (is_void(errmode)) errmode = 1n;
   fh = fits_open(filename);
   master = oifits_new();
   counter = 0;
@@ -1501,6 +1574,8 @@ func oifits_load(filename, quiet=, errmode=)
           db = _oifits_datablock_builder(type, fh, extname, hdu);
           if (! is_void(db)) {
             oifits_insert, master, db;
+          } else if (errmode && numberof(_oifits_error_stack)) {
+            error, _oifits_error_stack(0);
           }
         }
       }
@@ -2064,7 +2139,7 @@ func oifits_fix_name(s)
    SEE ALSO: strtrim, strcase, strupper. */
 {
   s = strcase(1, strtrim(s, 2));
-  if (is_array((j = where(s == string())))) s(j) = ""; // fix nil strings
+  if (is_array((j = where(!s)))) s(j) = ""; // fix nil strings
   return s;
 }
 
@@ -2439,6 +2514,28 @@ _OIFITS_CLASSDEF_SPECTRUM_1 = \
  "2 FLUXDATA  -1D -   flux",
  "2 FLUXERR   -1D -   flux error"];
 
+/*-----------------------------------------*/
+/* OI_FLUX CLASS DEFINITION (1ST REVISION) */
+/*-----------------------------------------*/
+
+_OIFITS_CLASSDEF_FLUX_1 = \
+["0 OI_REVN            1I -        revision number of the table definition",
+ "0 DATE-OBS           1A -        UTC start date of observations",
+ "0 INSNAME            1A -        name of corresponding detector",
+ "1 ARRNAME            1A -        name of corresponding array",
+ "1 CORRNAME           1A -        name of corresponding OI_CORR table",
+ "1 FOV                1D arcsec   area of sky over which flux is integrated",
+ "1 FOVTYPE            1A -        model for FOV: 'FWHM' or 'RADIUS'",
+ "0 CALSTAT            1A -        'C': spectrum is calibrated, 'U': uncalibrated",
+ "2 TARGET_ID          1I -        target number as index into OI_TARGET table",
+ "2 MJD                1D day      modified Julian Day",
+ "2 INT_TIME           1D s        integration time",
+ "2 FLUXDATA          -1D -        flux",
+ "2 FLUXERR           -1D -        flux error",
+ "3 CORRINDX_FLUXDATA  1J -        index into correlation matrix for 1st FLUXDATA element",
+ "3 STA_INDEX          1I -        station number contributing to the data",
+ "2 FLAG              -1L -        flag"];
+
 /*---------------------------------------------------------------------------*/
 /* INITIALIZATION OF OI-FITS TABLES AND CONSTANTS */
 
@@ -2460,7 +2557,7 @@ OIFITS_MILLIARCSECOND = 1e-3*OIFITS_ARCSECOND;
 OIFITS_MICRON = 1e-6;
 
 local OIFITS_TYPE_TARGET, OIFITS_TYPE_WAVELENGTH, OIFITS_TYPE_ARRAY;
-local OIFITS_TYPE_VIS, OIFITS_TYPE_VIS2, OIFITS_TYPE_T3;
+local OIFITS_TYPE_VIS, OIFITS_TYPE_VIS2, OIFITS_TYPE_T3, OIFITS_TYPE_FLUX;
 local OIFITS_TYPE_SPECTRUM;
 func oifits_get_type(db) { return db.__type; }
 /* DOCUMENT oifits_get_type(db)
@@ -2476,6 +2573,8 @@ func oifits_get_type(db) { return db.__type; }
                                 squared visibilities;
        OIFITS_TYPE_T3         - for an OI-FITS data block with measured
                                 triple products (bispectrum).
+       OIFITS_TYPE_FLUX       - for an OI-FITS data block with measured
+                                target(s) spectrum.
        OIFITS_TYPE_SPECTRUM   - for an OI-FITS data block with measured
                                 target(s) spectrum.
 
@@ -2533,12 +2632,12 @@ func _oifits_init
 {
   extern OIFITS_TYPE_TARGET, OIFITS_TYPE_WAVELENGTH, OIFITS_TYPE_ARRAY;
   extern OIFITS_TYPE_VIS, OIFITS_TYPE_VIS2, OIFITS_TYPE_T3;
-  extern OIFITS_TYPE_SPECTRUM;
+  extern OIFITS_TYPE_FLUX, OIFITS_TYPE_SPECTRUM;
   extern _OIFITS_TYPE_TABLE, _OIFITS_CLASS_NAME_TABLE;
   extern _OIFITS_DATABLOCK_CLASS;
 
   _OIFITS_DATABLOCK_CLASS = ["TARGET", "WAVELENGTH", "ARRAY",
-                             "VIS", "VIS2", "T3", "SPECTRUM"];
+                             "VIS", "VIS2", "T3", "FLUX", "SPECTRUM"];
 
   _OIFITS_TYPE_TABLE = h_new();
   _OIFITS_CLASS_NAME_TABLE = array(string, numberof(_OIFITS_DATABLOCK_CLASS));

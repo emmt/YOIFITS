@@ -600,17 +600,24 @@ func oifits_merge(.., quiet=)
           v2coord = oifits_get_v2coord(data, db),
           sta_index = oifits_get_sta_index(data, db),
           flag = oifits_get_flag(data, db);
-      } else if (type == OIFITS_TYPE_SPECTRUM) {
-        oifits_new_spectrum, master,
+      } else if (type == OIFITS_TYPE_FLUX) {
+        oifits_new_flux, master,
           revn = oifits_get_revn(data, db),
           date_obs = oifits_get_date_obs(data, db),
           insname = oifits_get_insname(data, db),
+          arrname = oifits_get_arrname(data, db),
+          corrname = oifits_get_corrname(data, db),
           fov = oifits_get_fov(data, db),
+          fovtype = oifits_get_fovtype(data, db),
+          calstat = oifits_get_calstat(data, db),
           target_id = oifits_get_target_id(data, db),
           mjd = oifits_get_mjd(data, db),
           int_time = oifits_get_int_time(data, db),
           fluxdata = oifits_get_fluxdata(data, db),
-          fluxerr = oifits_get_fluxerr(data, db);
+          fluxerr = oifits_get_fluxerr(data, db),
+          corrindx_fluxdata = oifits_get_corrindx_fluxdata(data, db),
+          sta_index = oifits_get_sta_index(data, db),
+          flag = oifits_get_flag(data, db);
       }
     }
   }
@@ -1071,65 +1078,6 @@ func oifits_new_t3(master,
   return db;
 }
 
-local oifits_new_spectrum;
-/* DOCUMENT db = oifits_new_spectrum(key1 = value1, ...);
-       -or- db = oifits_new_spectrum(master, key1 = value1, ...);
-       -or- oifits_new_spectrum, master, key1 = value1, ...;
-
-     Creates a new OI-FITS data-block of type OI_SPECTRUM (spectral energy
-     distribution).  If MASTER is non-nil, it must be an existing OI-FITS
-     master instance to store the new data-block (in this case the returned
-     value can be ignored).  All members of DB are specified by keywords (KEY1
-     = VALUE1, KEY2 = VALUE2, etc).
-
-     As of revision 1 of OI-FITS standard, the members of an OI_SPECTRUM
-     data-block are:
-
-     Keyword    Units   Description
-     --------------------------------------------------------------
-     revn               revision number (default is last version)
-     date_obs           UTC start date of observations
-     insname            name of corresponding detector
-     target_id          target number as index into OI_TARGET table
-     mjd        day     modified Julian Day
-     int_time   s       integration time
-     flux               target spectral energy distribution
-     fluxerr            flux error
-     --------------------------------------------------------------
-
-   SEE ALSO: oifits_insert, oifits_get, oifits_new, oifits_new_array,
-             oifits_new_target, oifits_new_wavelength. */
-func oifits_new_spectrum(master,
-                         revn=,
-                         date_obs=,
-                         insname=,
-                         fov=, /* FIXME: FOV is ignored for now */
-                         target_id=,
-                         mjd=,
-                         int_time=,
-                         fluxdata=,
-                         fluxerr=)
-{
-  local _oifits_error_stack;
-  _oifits_on_error = _oifits_on_error_stop;
-  db = _oifits_datablock_builder(OIFITS_TYPE_SPECTRUM,
-                                 h_new(revn = revn,
-                                       date_obs = date_obs,
-                                       insname = insname,
-                                       target_id = target_id,
-                                       mjd = mjd,
-                                       int_time = int_time,
-                                       fluxdata = fluxdata,
-                                       fluxerr = fluxerr));
-  if (numberof(_oifits_error_stack)) {
-    _oifits_report_error;
-  }
-  if (master) {
-    oifits_insert, master, db;
-  }
-  return db;
-}
-
 local oifits_new_flux;
 /* DOCUMENT db = oifits_new_flux(key1 = value1, ...);
        -or- db = oifits_new_flux(master, key1 = value1, ...);
@@ -1145,16 +1093,24 @@ local oifits_new_flux;
      data-block are:
 
      Keyword    Units   Description
-     --------------------------------------------------------------
+     -------------------------------------------------------------------------
      revn               revision number (default is last version)
      date_obs           UTC start date of observations
      insname            name of corresponding detector
+     arrname            name of corresponding array
+     corrname           name of corresponding OI_CORR table
+     fov        arcsec  area of sky over which flux is integrated
+     fovtype            model for FOV: "FWHM" or "RADIUS"
+     calstat            "C": spectrum is calibrated, "U": uncalibrated
      target_id          target number as index into OI_TARGET table
      mjd        day     modified Julian Day
      int_time   s       integration time
      flux               target spectral energy distribution
      fluxerr            flux error
-     --------------------------------------------------------------
+     corrindx_fluxdata  index into correlation matrix for 1st FLUXDATA element
+     sta_index          station numbers contributing to the data
+     flag               flag
+     -------------------------------------------------------------------------
 
    SEE ALSO: oifits_insert, oifits_get, oifits_new, oifits_new_array,
              oifits_new_target, oifits_new_wavelength. */
@@ -2534,21 +2490,6 @@ _OIFITS_CLASSDEF_T3_1 = \
  "2 STA_INDEX  3I -   station numbers contributing to the data",
  "2 FLAG      -1L -   flag"];
 
-/*---------------------------------------------*/
-/* OI_SPECTRUM CLASS DEFINITION (1ST REVISION) */
-/*---------------------------------------------*/
-
-_OIFITS_CLASSDEF_SPECTRUM_1 = \
-["0 OI_REVN    1I -   revision number of the table definition",
- "0 DATE-OBS   1A -   UTC start date of observations",
- "0 INSNAME    1A -   name of corresponding detector",
-/*"0 FOV        1D -   area of sky over which flux is integrated",*/
- "2 TARGET_ID  1I -   target number as index into OI_TARGET table",
- "2 MJD        1D day modified Julian Day",
- "2 INT_TIME   1D s   integration time",
- "2 FLUXDATA  -1D -   flux",
- "2 FLUXERR   -1D -   flux error"];
-
 /*-----------------------------------------*/
 /* OI_FLUX CLASS DEFINITION (1ST REVISION) */
 /*-----------------------------------------*/
@@ -2593,7 +2534,6 @@ OIFITS_MICRON = 1e-6;
 
 local OIFITS_TYPE_TARGET, OIFITS_TYPE_WAVELENGTH, OIFITS_TYPE_ARRAY;
 local OIFITS_TYPE_VIS, OIFITS_TYPE_VIS2, OIFITS_TYPE_T3, OIFITS_TYPE_FLUX;
-local OIFITS_TYPE_SPECTRUM;
 func oifits_get_type(db) { return db.__type; }
 /* DOCUMENT oifits_get_type(db)
      Returns OI-FITS type identifier for datablock DB, one of:
@@ -2609,8 +2549,6 @@ func oifits_get_type(db) { return db.__type; }
        OIFITS_TYPE_T3         - for an OI-FITS data block with measured
                                 triple products (bispectrum).
        OIFITS_TYPE_FLUX       - for an OI-FITS data block with measured
-                                target(s) spectrum.
-       OIFITS_TYPE_SPECTRUM   - for an OI-FITS data block with measured
                                 target(s) spectrum.
 
    SEE ALSO: oifits_new. */
@@ -2667,12 +2605,12 @@ func _oifits_init
 {
   extern OIFITS_TYPE_TARGET, OIFITS_TYPE_WAVELENGTH, OIFITS_TYPE_ARRAY;
   extern OIFITS_TYPE_VIS, OIFITS_TYPE_VIS2, OIFITS_TYPE_T3;
-  extern OIFITS_TYPE_FLUX, OIFITS_TYPE_SPECTRUM;
+  extern OIFITS_TYPE_FLUX;
   extern _OIFITS_TYPE_TABLE, _OIFITS_CLASS_NAME_TABLE;
   extern _OIFITS_DATABLOCK_CLASS;
 
   _OIFITS_DATABLOCK_CLASS = ["TARGET", "WAVELENGTH", "ARRAY",
-                             "VIS", "VIS2", "T3", "FLUX", "SPECTRUM"];
+                             "VIS", "VIS2", "T3", "FLUX"];
 
   _OIFITS_TYPE_TABLE = h_new();
   _OIFITS_CLASS_NAME_TABLE = array(string, numberof(_OIFITS_DATABLOCK_CLASS));

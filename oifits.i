@@ -284,7 +284,7 @@ func oifits_update(master, errmode=, revn=, force=)
     r = db.revn;
     if (! is_integer(r) || ! is_scalar(r) || r < 1 || r > _OIFITS_REVN_MAX) {
       if (_oifits_error("bad/missing OI_REVN for data block %d", db.__index)) {
-        error, _oifits_error_stack(1);
+        _oifits_report_error;
       }
     } else {
       revn_list(i) = r;
@@ -323,7 +323,7 @@ func oifits_update(master, errmode=, revn=, force=)
       class = _OIFITS_DATABLOCK_CLASS(type);
     } else {
       if (_oifits_error("bad OI-FITS type for data block %d", db.__index)) {
-        error, _oifits_error_stack(1);
+        _oifits_report_error;
       }
       continue;
     }
@@ -339,7 +339,7 @@ func oifits_update(master, errmode=, revn=, force=)
       if (! is_string(insname) || ! is_scalar(insname)) {
         if (_oifits_error("bad/missing INSNAME for data block %d",
                           db.__index)) {
-          error, _oifits_error_stack(1);
+          _oifits_report_error;
         }
         continue;
       }
@@ -349,7 +349,7 @@ func oifits_update(master, errmode=, revn=, force=)
         if (h_has(ins_table, insname)) {
           if (_oifits_error("too many OI_WAVELENGTH blocks with INSNAME = '%s'",
                             insname)) {
-            error, _oifits_error_stack(1);
+            _oifits_report_error;
           }
         } else {
           h_set, ins_table, insname, key;
@@ -367,7 +367,7 @@ func oifits_update(master, errmode=, revn=, force=)
       } else if (type == OIFITS_TYPE_ARRAY || ! is_void(arrname)) {
         if (_oifits_error("bad/missing ARRNAME for data block %d",
                           db.__index)) {
-          error, _oifits_error_stack(1);
+          _oifits_report_error;
         }
         continue;
       }
@@ -375,7 +375,7 @@ func oifits_update(master, errmode=, revn=, force=)
         if (h_has(arr_table, arrname)) {
           if (_oifits_error("too many OI_ARRAY blocks with ARRNAME = '%s'",
                             arrname)) {
-            error, _oifits_error_stack(1);
+            _oifits_report_error;
           }
         } else {
           h_set, arr_table, arrname, key;
@@ -399,11 +399,11 @@ func oifits_update(master, errmode=, revn=, force=)
   n = numberof(target_list);
   if (n == 0) {
     if (_oifits_error("missing mandatory OI_TARGET datablock")) {
-      error, _oifits_error_stack(1);
+      _oifits_report_error;
     }
   } else if (n > 1) {
     if (_oifits_error("too many OI_TARGET datablocks")) {
-      error, _oifits_error_stack(1);
+      _oifits_report_error;
     }
   }
 
@@ -419,13 +419,13 @@ func oifits_update(master, errmode=, revn=, force=)
     if (is_void(ins_lnk) && (db.__is_data ||
                              db.__type == OIFITS_TYPE_WAVELENGTH) &&
         _oifits_error("bad/missing INSNAME for data block %d", db.__index)) {
-      error, _oifits_error_stack(1);
+      _oifits_report_error;
     }
     if (db.__is_data && ! is_void(ins_lnk) &&
         master(ins_lnk).__nwavelengths != db.__nwavelengths) {
       if (_oifits_error("inconsistent number of wavelengths for data block %d",
                         db.__index)) {
-        error, _oifits_error_stack(1);
+        _oifits_report_error;
       }
       h_pop, db, "__ins";
     }
@@ -701,7 +701,7 @@ func oifits_new_target(master,
                                        para_err = para_err,
                                        spectyp = spectyp));
   if (numberof(_oifits_error_stack)) {
-    error, _oifits_error_stack(1);
+    _oifits_report_error;
   }
   if (master) {
     oifits_insert, master, db;
@@ -768,7 +768,7 @@ func oifits_new_array(master,
                                        diameter = diameter,
                                        staxyz = staxyz));
   if (numberof(_oifits_error_stack)) {
-    error, _oifits_error_stack(1);
+    _oifits_report_error;
   }
   if (master) {
     oifits_insert, master, db;
@@ -814,7 +814,7 @@ func oifits_new_wavelength(master,
                                        eff_wave = eff_wave,
                                        eff_band = eff_band));
   if (numberof(_oifits_error_stack)) {
-    error, _oifits_error_stack(1);
+    _oifits_report_error;
   }
   if (master) {
     oifits_insert, master, db;
@@ -897,7 +897,7 @@ func oifits_new_vis(master,
                                        sta_index = sta_index,
                                        flag = flag));
   if (numberof(_oifits_error_stack)) {
-    error, _oifits_error_stack(1);
+    _oifits_report_error;
   }
   if (master) {
     oifits_insert, master, db;
@@ -974,7 +974,7 @@ func oifits_new_vis2(master,
                                        sta_index = sta_index,
                                        flag = flag));
   if (numberof(_oifits_error_stack)) {
-    error, _oifits_error_stack(1);
+    _oifits_report_error;
   }
   if (master) {
     oifits_insert, master, db;
@@ -1063,7 +1063,7 @@ func oifits_new_t3(master,
                                        sta_index = sta_index,
                                        flag = flag));
   if (numberof(_oifits_error_stack)) {
-    error, _oifits_error_stack(1);
+    _oifits_report_error;
   }
   if (master) {
     oifits_insert, master, db;
@@ -1122,7 +1122,7 @@ func oifits_new_spectrum(master,
                                        fluxdata = fluxdata,
                                        fluxerr = fluxerr));
   if (numberof(_oifits_error_stack)) {
-    error, _oifits_error_stack(1);
+    _oifits_report_error;
   }
   if (master) {
     oifits_insert, master, db;
@@ -1194,7 +1194,7 @@ func oifits_new_flux(master,
                                        sta_index = sta_index,
                                        flag = flag));
   if (numberof(_oifits_error_stack)) {
-    error, _oifits_error_stack(1);
+    _oifits_report_error;
   }
   if (master) {
     oifits_insert, master, db;
@@ -1575,7 +1575,7 @@ func oifits_load(filename, quiet=, errmode=)
           if (! is_void(db)) {
             oifits_insert, master, db;
           } else if (errmode && numberof(_oifits_error_stack)) {
-            error, _oifits_error_stack(0);
+            _oifits_report_error;
           }
         }
       }
@@ -1968,12 +1968,39 @@ func _oifits_error(message, ..)
   return _oifits_on_error(message);
 }
 
-func oifits_clear_error(master, msg)
+func _oifits_report_error
+{
+  extern _oifits_error_stack;
+  n = numberof(_oifits_error_stack);
+  if (n == 0) {
+    message = "no error messages!";
+  } else {
+    message = _oifits_error_stack(1);
+    if (n > 1) {
+      message += sum("\n" + _oifits_error_stack(2:n));
+    }
+  }
+  error, message;
+}
+errs2caller, _oifits_report_error;
+
+
+func oifits_clear_error(master)
+/* DOCUMENT msg = oifits_clear_error(master);
+     Clear error messages in MASTER returning the former error messages if any.
+
+   SEE ALSO: oifits_get_error.
+ */
 {
   return h_pop(master, "__errmsg");
 }
 
-func oifits_get_error(master, msg)
+func oifits_get_error(master)
+/* DOCUMENT msg = oifits_get_error(master);
+     Return any error messages in MASTER.
+
+   SEE ALSO: oifits_clear_error.
+ */
 {
   return h_get(master, "__errmsg");
 }

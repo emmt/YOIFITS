@@ -1714,9 +1714,10 @@ func oifits_is_data(db) { return db.__is_data; }
  */
 
 local oifits_get, oifits_get_time, oifits_get_mjd, oifits_get_int_time, oifits_get_sta_index, oifits_get_flag, oifits_get_visamp, oifits_get_visamperr, oifits_get_visphi, oifits_get_visphierr, oifits_get_vis2data, oifits_get_vis2err, oifits_get_t3amp, oifits_get_t3amperr, oifits_get_t3phi, oifits_get_t3phierr, oifits_get_ucoord, oifits_get_vcoord, oifits_get_u1coord, oifits_get_v1coord, oifits_get_u2coord, oifits_get_v2coord;
-local oifits_get_date_obs, oifits_get_arrname, oifits_get_insname, oifits_get_revn, oifits_get_frame, oifits_get_arrayx, oifits_get_arrayy, oifits_get_arrayz, oifits_get_tel_name, oifits_get_sta_name, oifits_get_sta_index, oifits_get_diameter, oifits_get_staxyz;
+local oifits_get_date_obs, oifits_get_arrname, oifits_get_insname, oifits_get_corrname, oifits_get_revn, oifits_get_frame, oifits_get_arrayx, oifits_get_arrayy, oifits_get_arrayz, oifits_get_tel_name, oifits_get_sta_name, oifits_get_sta_index, oifits_get_diameter, oifits_get_staxyz;
 local oifits_get_eff_wave, oifits_get_eff_band;
 local oifits_get_target_id, oifits_get_target, oifits_get_raep0, oifits_get_decep0, oifits_get_equinox, oifits_get_ra_err, oifits_get_dec_err, oifits_get_sysvel, oifits_get_veltyp, oifits_get_veldef, oifits_get_pmra, oifits_get_pmdec, oifits_get_pmra_err, oifits_get_pmdec_err, oifits_get_parallax, oifits_get_para_err, oifits_get_spectyp;
+local oifits_get_fov, oifits_get_fovtype, oifits_get_calstat, oifits_get_fluxdata, oifits_get_fluxerr, oifits_get_corrindx_fluxdata;
 /* DOCUMENT oifits_get_...(master, db);
 
      This functions query a given attribute of OI-FITS data block DB
@@ -1816,6 +1817,7 @@ func oifits_get_v2coord(master, db)   { return db.v2coord; }
 func oifits_get_date_obs(master, db)  { return db.date_obs; }
 func oifits_get_arrname(master, db)   { return db.arrname; }
 func oifits_get_insname(master, db)   { return db.insname; }
+func oifits_get_corrname(master, db)  { return db.corrname; }
 func oifits_get_revn(master, db)      { return db.revn; }
 func oifits_get_frame(master, db)     { return db.frame; }
 func oifits_get_arrayx(master, db)    { return db.arrayx; }
@@ -1844,6 +1846,13 @@ func oifits_get_pmdec_err(master, db) { return db.pmdec_err; }
 func oifits_get_parallax(master, db)  { return db.parallax; }
 func oifits_get_para_err(master, db)  { return db.para_err; }
 func oifits_get_spectyp(master, db)   { return db.spectyp; }
+
+func oifits_get_fov(master, db)       { return db.fov; }
+func oifits_get_fovtype(master, db)   { return db.fovtype; }
+func oifits_get_calstat(master, db)   { return db.calstat; }
+func oifits_get_fluxdata(master, db)  { return db.fluxdata; }
+func oifits_get_fluxerr(master, db)   { return db.fluxerr; }
+func oifits_get_corrindx_fluxdata(master, db) { return db.corrindx_fluxdata; }
 
 func oifits_get_eff_wave(master, db)
 {
@@ -1983,7 +1992,6 @@ func _oifits_report_error
   error, message;
 }
 errs2caller, _oifits_report_error;
-
 
 func oifits_clear_error(master)
 /* DOCUMENT msg = oifits_clear_error(master);

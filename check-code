@@ -1,0 +1,25 @@
+#! /bin/sh
+#
+# This script can be used to check OI-FITS code.
+
+dir=$(dirname "$0")
+if test $# -eq 0; then
+    src=$dir/oifits.i
+elif test $# -eq 1; then
+    src=$1
+else
+  echo >&2 "usage: chech-code [SRC]"
+  exit 1
+fi
+
+grep -E <"$src" \
+    '^ *func +oifits_get_([a-zA-Z0-9_]+) *\( *master *, *db *\) *{ *return +db\.' \
+    | sed -r '/^ *func +oifits_get_([a-zA-Z0-9_]+) *\( *master *, *db *\) *\{ *return +db\.\1 *; *\}/d'
+
+grep -E <"$src" \
+    '(^|[^_0-9A-Za-z])([a-zA-Z0-9_]+) *= *oifits_get_' \
+    | sed -r '/(^|[^_0-9A-Za-z])([a-zA-Z0-9_]+) *= *oifits_get_\2 *\(/d'
+
+#grep -E <"$src" \
+#    '(^|[^_0-9A-Za-z])([a-z][a-z0-9_]*) *= ([a-zA-Z0-9_]+) *[,;)]' \
+#    | sed -r '/(^|[^_0-9A-Za-z])([a-z][a-z0-9_]+) *= *\2 * *[,;)]/d'

@@ -59,8 +59,8 @@ specific field is:
 ```
     oifits_get_FIELDNAME(ws, db);
 ```
-where `FIELDNAME` is the name of the OI-FITS fields which is the same as the
-corresponding FITS keyword or column converetd in lowercase letters and non
+where `FIELDNAME` is the name of the OI-FITS field which is the same as the
+corresponding FITS keyword or column in lowercase letters and with non
 alphanumerical characters replaced by an underscore `_`.  For instance, to
 query the effective wavelength, just do:
 ```
@@ -144,19 +144,19 @@ disk.
 
 To create a new OI-FITS instance:
 ````
-    ws = oifit_new();
+    ws = oifits_new();
 ````
 
 To add data-blocks:
 ````
-    oifit_insert, ws, db1, db2, ...;
+    oifits_insert, ws, db1, db2, ...;
 ````
 where `db1`, `db2`, *etc.* are OI-FITS data-blocks which have been freshly
 created (see below) or which are borrowed from another OI-FITS instance.
 
 To create a new data-block, the general syntax is:
 ````
-    db = oifit_new_DBTYPE(key1=val1, key2=val2, ...);
+    db = oifits_new_DBTYPE(key1=val1, key2=val2, ...);
 ````
 where `DBTYPE` is the data-block type (`target`, `array`, `wavelength`,
 `spectrum`, `vis`, `vis2` or `t3`) and all fields of the data-block are passed
@@ -164,17 +164,17 @@ by keyword.  Note that all fields must be specified.  See the individual
 documentation of the data-block constructors to figure out which fields are
 required.  For instance:
 ````
-    help, oifit_new_vis2;
+    help, oifits_new_vis2;
 ````
 
 Optionally, the OI-FITS instance to which insert the new data-block can be
 specified in a data-block constructor:
 ````
-    oifit_new_DBTYPE, ws, key1=val1, key2=val2, ...;
+    oifits_new_DBTYPE, ws, key1=val1, key2=val2, ...;
 ````
 is the same as:
 ````
-    oifits_insert, ws, oifit_new_DBTYPE(key1=val1, key2=val2, ...);
+    oifits_insert, ws, oifits_new_DBTYPE(key1=val1, key2=val2, ...);
 ````
 
 There may be any number of data-blocks in an OI-FITS instance and they may be
@@ -183,7 +183,7 @@ necessary to make sure that the internals of the OI-FITS instance are consistent
 (otherwise some functionalities may not work as expected).  Updating internal
 information is done by:
 ````
-    oifit_update, ws;
+    oifits_update, ws;
 ````
 
 Saving an OI-FITS instance to a file is as simple as:

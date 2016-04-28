@@ -52,6 +52,7 @@ if (! is_func(h_new)) include, "yeti.i", 1;
  *   master.__revn         [integer] revision number
  *   master.__counter      [integer] data block counter
  *   master.__array        [string] names of OI_ARRAY data blocks
+ *   master.__corr         [string] names of OI_CORR data blocks
  *   master.__data         [string] names of OI_VIS, OI_VIS2 and OI_T3 data
  *                                  blocks
  *   master.__errmsg       [string] pending error message(s)
@@ -67,6 +68,7 @@ if (! is_func(h_new)) include, "yeti.i", 1;
  *   db.__is_data  [integer] this data block contains measurements
  *   db.__ins      [string]  name ("__db#) of related OI_WAVELENGTH in master
  *   db.__arr      [string]  name ("__db#) of related OI_ARRAY in master
+ *   db.__corr     [string]  name ("__db#) of related OI_CORR in master
  *   db.__self     [string]  name ("__db#) of this data block in its parent
  *   db.__index    [integer] index of this data block
  *   db.__type     [integer] data block type (see oifits_get_type)
@@ -309,9 +311,11 @@ func oifits_update(master, errmode=, revn=, force=)
   data_list = [];
   array_list = [];
   target_list = [];
+  corr_list = [];
   wavelength_list = [];
   ins_table = h_new();
   arr_table = h_new();
+  corr_table = h_new();
   for (key = master.__first; key; key = db.__next) {
     db = master(key);
 
@@ -329,7 +333,8 @@ func oifits_update(master, errmode=, revn=, force=)
     }
     is_data = (type == OIFITS_TYPE_VIS ||
                type == OIFITS_TYPE_VIS2 ||
-               type == OIFITS_TYPE_T3);
+               type == OIFITS_TYPE_T3 ||
+               type == OIFITS_TYPE_FLUX);
     h_set, db, revn=revn,
       __self=key, __type=type, __class=class, __is_data=is_data;
 
@@ -383,6 +388,32 @@ func oifits_update(master, errmode=, revn=, force=)
       }
     }
 
+    /* Check CORRNAME and build table of OI_CORR datablocks. */
+    if (is_data || type == OIFITS_TYPE_CORR) {
+      corrname = db.corrname;
+      if (is_string(corrname) && is_scalar(corrname)) {
+        /* remove trailing spaces and register CORRNAME */
+        corrname = oifits_fix_name(corrname);
+        h_set, db, corrname=corrname;
+      } else if (type == OIFITS_TYPE_CORR || ! is_void(corrname)) {
+        if (_oifits_error("bad/missing CORRNAME for data block %d",
+                          db.__index)) {
+          _oifits_report_error;
+        }
+        continue;
+      }
+      if (type == OIFITS_TYPE_CORR) {
+        if (h_has(corr_table, corrname)) {
+          if (_oifits_error("too many OI_CORR blocks with CORRNAME = '%s'",
+                            corrname)) {
+            _oifits_report_error;
+          }
+        } else {
+          h_set, corr_table, corrname, key;
+        }
+      }
+    }
+
     /* Grow list of target/data. */
     if (type == OIFITS_TYPE_TARGET) {
       grow, target_list, key;
@@ -390,6 +421,8 @@ func oifits_update(master, errmode=, revn=, force=)
       grow, array_list, key;
     } else if (type == OIFITS_TYPE_WAVELENGTH) {
       grow, wavelength_list, key;
+    } else if (type == OIFITS_TYPE_CORR) {
+      grow, corr_list, key;
     } else {
       grow, data_list, key;
     }
@@ -415,7 +448,9 @@ func oifits_update(master, errmode=, revn=, force=)
     ins_lnk = (insname ? ins_table(db.insname) : nil);
     arrname = db.arrname;
     arr_lnk = (arrname ? arr_table(db.arrname) : nil);
-    h_set, db, __ins=ins_lnk, __arr=arr_lnk;
+    corrname = db.corrname;
+    corr_lnk = (corrname ? corr_table(db.corrname) : nil);
+    h_set, db, __ins=ins_lnk, __arr=arr_lnk, __corr=corr_lnk;
     if (is_void(ins_lnk) && (db.__is_data ||
                              db.__type == OIFITS_TYPE_WAVELENGTH) &&
         _oifits_error("bad/missing INSNAME for data block %d", db.__index)) {
@@ -502,7 +537,9 @@ func oifits_merge(.., quiet=)
                                       sta_name = oifits_get_sta_name(data, db),
                                       sta_index = oifits_get_sta_index(data, db),
                                       diameter = oifits_get_diameter(data, db),
-                                      staxyz = oifits_get_staxyz(data, db));
+                                      staxyz = oifits_get_staxyz(data, db),
+                                      fov = oifits_get_fov(data, db),
+                                      fovtype = oifits_get_fovtype(data, db));
         } else {
           msg = _oifits_compare_tables(array_db, db);
           if (msg) {
@@ -529,7 +566,8 @@ func oifits_merge(.., quiet=)
                                         pmdec_err = oifits_get_pmdec_err(data, db),
                                         parallax = oifits_get_parallax(data, db),
                                         para_err = oifits_get_para_err(data, db),
-                                        spectyp = oifits_get_spectyp(data, db));
+                                        spectyp = oifits_get_spectyp(data, db),
+                                        category = oifits_get_category(data, db));
         } else {
           msg = _oifits_compare_tables(target_db, db);
           if (msg) {
@@ -552,14 +590,28 @@ func oifits_merge(.., quiet=)
           date_obs = oifits_get_date_obs(data, db),
           arrname = oifits_get_arrname(data, db),
           insname = oifits_get_insname(data, db),
+          corrname = oifits_get_corrname(data, db),
+          amptyp = oifits_get_amptyp(data, db),
+          phityp = oifits_get_phityp(data, db),
+          amporder = oifits_get_amporder(data, db),
+          phiorder = oifits_get_phiorder(data, db),
           target_id = oifits_get_target_id(data, db),
           time = oifits_get_time(data, db),
           mjd = oifits_get_mjd(data, db),
           int_time = oifits_get_int_time(data, db),
           visamp = oifits_get_visamp(data, db),
           visamperr = oifits_get_visamperr(data, db),
+          corrindx_visamp = oifits_get_corrindx_visamp(data, db),
           visphi = oifits_get_visphi(data, db),
           visphierr = oifits_get_visphierr(data, db),
+          corrindx_visphi = oifits_get_corrindx_visphi(data, db),
+          visrefmap = oifits_get_visrefmap(data, db),
+          rvis = oifits_get_rvis(data, db),
+          rviserr = oifits_get_rviserr(data, db),
+          corrindx_rvis = oifits_get_corrindx_rvis(data, db),
+          ivis = oifits_get_ivis(data, db),
+          iviserr = oifits_get_iviserr(data, db),
+          corrindx_ivis = oifits_get_corrindx_ivis(data, db),
           ucoord = oifits_get_ucoord(data, db),
           vcoord = oifits_get_vcoord(data, db),
           sta_index = oifits_get_sta_index(data, db),
@@ -570,12 +622,14 @@ func oifits_merge(.., quiet=)
           date_obs = oifits_get_date_obs(data, db),
           arrname = oifits_get_arrname(data, db),
           insname = oifits_get_insname(data, db),
+          corrname = oifits_get_corrname(data, db),
           target_id = oifits_get_target_id(data, db),
           time = oifits_get_time(data, db),
           mjd = oifits_get_mjd(data, db),
           int_time = oifits_get_int_time(data, db),
           vis2data = oifits_get_vis2data(data, db),
           vis2err = oifits_get_vis2err(data, db),
+          corrindx_vis2data = oifits_get_corrindx_vis2data(data, db),
           ucoord = oifits_get_ucoord(data, db),
           vcoord = oifits_get_vcoord(data, db),
           sta_index = oifits_get_sta_index(data, db),
@@ -586,14 +640,17 @@ func oifits_merge(.., quiet=)
           date_obs = oifits_get_date_obs(data, db),
           arrname = oifits_get_arrname(data, db),
           insname = oifits_get_insname(data, db),
+          corrname = oifits_get_corrname(data, db),
           target_id = oifits_get_target_id(data, db),
           time = oifits_get_time(data, db),
           mjd = oifits_get_mjd(data, db),
           int_time = oifits_get_int_time(data, db),
           t3amp = oifits_get_t3amp(data, db),
           t3amperr = oifits_get_t3amperr(data, db),
+          corrindx_t3amp = oifits_get_corrindx_t3amp(data, db),
           t3phi = oifits_get_t3phi(data, db),
           t3phierr = oifits_get_t3phierr(data, db),
+          corrindx_t3phi = oifits_get_corrindx_t3phi(data, db),
           u1coord = oifits_get_u1coord(data, db),
           v1coord = oifits_get_v1coord(data, db),
           u2coord = oifits_get_u2coord(data, db),
@@ -618,6 +675,31 @@ func oifits_merge(.., quiet=)
           corrindx_fluxdata = oifits_get_corrindx_fluxdata(data, db),
           sta_index = oifits_get_sta_index(data, db),
           flag = oifits_get_flag(data, db);
+      } else if (type == OIFITS_TYPE_INSPOL) {
+        oifits_new_inspol, master,
+          revn = oifits_get_revn(data, db),
+          date_obs = oifits_get_date_obs(data, db),
+          npol = oifits_get_npol(data, db),
+          arrname = oifits_get_arrname(data, db),
+          orient = oifits_get_orient(data, db),
+          model = oifits_get_model(data, db),
+          target_id = oifits_get_target_id(data, db),
+          insname = oifits_get_insname(data, db),
+          mjd_obs = oifits_get_mjd_obs(data, db),
+          mjd_end = oifits_get_mjd_end(data, db),
+          jxx = oifits_get_jxx(data, db),
+          jyy = oifits_get_jyy(data, db),
+          jxy = oifits_get_jxy(data, db),
+          jyx = oifits_get_jyx(data, db),
+          sta_index = oifits_get_sta_index(data, db);
+      } else if (type == OIFITS_TYPE_CORR) {
+        oifits_new_flux, master,
+          revn = oifits_get_revn(data, db),
+          corrname = oifits_get_corrname(data, db),
+          ndata = oifits_get_ndata(data, db),
+          iindx = oifits_get_iindx(data, db),
+          jindx = oifits_get_jindx(data, db),
+          corr = oifits_get_corr(data, db);
       }
     }
   }
@@ -646,7 +728,8 @@ func oifits_new_target(master,
                        pmdec_err=,
                        parallax=,
                        para_err=,
-                       spectyp=)
+                       spectyp=,
+                       category=)
 /* DOCUMENT db = oifits_new_target(key1 = value1, ...);
        -or- db = oifits_new_target(master, key1 = value1, ...);
        -or- oifits_new_target, master, key1 = value1, ...;
@@ -656,7 +739,7 @@ func oifits_new_target(master,
      data-block (in this case the returned value can be ignored).  All members
      of DB are specified by keywords (KEY1 = VALUE1, KEY2 = VALUE2, etc).
 
-     As of revision 1 of OI-FITS standard, the members of an OI_TARGET
+     As of revision 2 of OI-FITS standard, the members of an OI_TARGET
      data-block are:
 
      Keyword    Units   Description
@@ -680,6 +763,7 @@ func oifits_new_target(master,
      parallax   deg     parallax
      para_err   deg     error in parallax
      spectyp            spectral type
+     category           "CAL" or "SCI"
      -------------------------------------------------------------------------
 
    SEE ALSO: oifits_insert, oifits_get, oifits_new,
@@ -706,7 +790,8 @@ func oifits_new_target(master,
                                        pmdec_err = pmdec_err,
                                        parallax = parallax,
                                        para_err = para_err,
-                                       spectyp = spectyp));
+                                       spectyp = spectyp,
+                                       category = category));
   if (numberof(_oifits_error_stack)) {
     _oifits_report_error;
   }
@@ -727,7 +812,9 @@ func oifits_new_array(master,
                       sta_name=,
                       sta_index=,
                       diameter=,
-                      staxyz=)
+                      staxyz=,
+                      fov=,
+                      fovtype=)
 /* DOCUMENT db = oifits_new_array(key1 = value1, ...);
        -or- db = oifits_new_array(master, key1 = value1, ...);
        -or- oifits_new_array, master, key1 = value1, ...;
@@ -738,7 +825,7 @@ func oifits_new_array(master,
      be ignored).  All members of DB are specified by keywords (KEY1 = VALUE1,
      KEY2 = VALUE2, etc).
 
-     As of revision 1 of OI-FITS standard, the members of an OI_ARRAY
+     As of revision 2 of OI-FITS standard, the members of an OI_ARRAY
      data-block are:
 
      Keyword    Units   Description
@@ -754,6 +841,8 @@ func oifits_new_array(master,
      sta_index          station index
      diameter   m       element diameter
      staxyz     m       station coordinates relative to array center
+     fov        arcsec  photometric field of view
+     fovtype            model for FOV: "FWHM" or "RADIUS"
      ---------------------------------------------------------------
 
    SEE ALSO: oifits_insert, oifits_get, oifits_new, oifits_new_target,
@@ -773,7 +862,9 @@ func oifits_new_array(master,
                                        sta_name = sta_name,
                                        sta_index = sta_index,
                                        diameter = diameter,
-                                       staxyz = staxyz));
+                                       staxyz = staxyz,
+                                       fov = fov,
+                                       fovtype = fovtype));
   if (numberof(_oifits_error_stack)) {
     _oifits_report_error;
   }
@@ -798,7 +889,7 @@ func oifits_new_wavelength(master,
      value can be ignored).  All members of DB are specified by keywords
      (KEY1 = VALUE1, KEY2 = VALUE2, etc).
 
-     As of revision 1 of OI-FITS standard, the members of an OI_WAVELENGTH
+     As of revision 2 of OI-FITS standard, the members of an OI_WAVELENGTH
      data-block are:
 
      Keyword    Units   Description
@@ -840,28 +931,41 @@ local oifits_new_vis;
      ignored).  All members of DB are specified by keywords (KEY1 = VALUE1,
      KEY2 = VALUE2, etc).
 
-     As of revision 1 of OI-FITS standard, the members of an OI_VIS data-block
+     As of revision 2 of OI-FITS standard, the members of an OI_VIS data-block
      are:
 
-     Keyword    Units   Description
-     ------------------------------------------------------------
-     revn               revision number (default is last version)
-     date_obs           UTC start date of observations
-     arrname            name of corresponding array
-     insname            name of corresponding detector
-     target_id          target number as index into OI_TARGET table
-     time       s       UTC time of observation
-     mjd        day     modified Julian Day
-     int_time   s       integration time
-     visamp             complex visibility amplitude
-     visamperr          error in complex visibility amplitude
-     visphi     deg     complex visibility phase
-     visphierr  deg     error in complex visibility phase
-     ucoord     m       U coordinate of the data
-     vcoord     m       V coordinate of the data
-     sta_index          station numbers contributing to the data
-     flag               flag
-     ------------------------------------------------------------
+     Keyword       Units  Description
+     --------------------------------------------------------------------------
+     revn                 revision number (default is last version)
+     date_obs             UTC start date of observations
+     arrname              name of corresponding OI_ARRAY table
+     insname              name of corresponding OI_WAVELENGTH table
+     corrname             name of corresponding OI_CORR table
+     amptyp               'absolute', 'differential', or 'correlated flux'
+     phityp               'absolute', or 'differential'",
+     amporder             polynomial fit order for differential chromatic amplitudes
+     phiorder             polynomial fit order for differential chromatic phases
+     target_id            target number as index into OI_TARGET table
+     time            s    UTC time of observation
+     mjd             day  modified Julian Day
+     int_time        s    integration time
+     visamp               complex visibility amplitude
+     visamperr            error in complex visibility amplitude
+     corrindx_visamp      index into correlation matrix for 1st VISAMP element
+     visphi          deg  complex visibility phase
+     visphierr       deg  error in complex visibility phase
+     corrindx_visphi      index into correlation matrix for 1st VISPHI element
+     visrefmap            boolean matrix indicating which spectral channels were
+                          taken as reference for differential chromatic visibility
+                          computation
+     rvis                 real part of complex coherent flux
+     rviserr              error on RVIS
+     corrindx_rvis        index into correlation matrix for 1st RVIS element
+     ucoord          m    U coordinate of the data
+     vcoord          m    V coordinate of the data
+     sta_index            station numbers contributing to the data
+     flag                 flag
+     --------------------------------------------------------------------------
 
    SEE ALSO: oifits_insert, oifits_get, oifits_new, oifits_new_array,
              oifits_new_target, oifits_new_wavelength, oifits_new_vis2,
@@ -871,19 +975,34 @@ func oifits_new_vis(master,
                     date_obs=,
                     arrname=,
                     insname=,
+                    corrname=,
+                    amptyp=,
+                    phityp=,
+                    amporder=,
+                    phiorder=,
                     target_id=,
                     time=,
                     mjd=,
                     int_time=,
                     visamp=,
                     visamperr=,
+                    corrindx_visamp=,
                     visphi=,
                     visphierr=,
+                    corrindx_visphi=,
+                    visrefmap=,
+                    rvis=,
+                    rviserr=,
+                    corrindx_rvis=,
+                    ivis=,
+                    iviserr=,
+                    corrindx_ivis=,
                     ucoord=,
                     vcoord=,
                     sta_index=,
                     flag=)
 {
+  if (! is_void(visrefmap)) error, "FIXME: VISREFMAP not yet implemented";
   local _oifits_error_stack;
   _oifits_on_error = _oifits_on_error_stop;
   db = _oifits_datablock_builder(OIFITS_TYPE_VIS,
@@ -897,8 +1016,17 @@ func oifits_new_vis(master,
                                        int_time = int_time,
                                        visamp = visamp,
                                        visamperr = visamperr,
+                                       corrindx_visamp = corrindx_visamp,
                                        visphi = visphi,
                                        visphierr = visphierr,
+                                       corrindx_visphi = corrindx_visphi,
+                                       visrefmap = visrefmap,
+                                       rvis = rvis,
+                                       rviserr = rviserr,
+                                       corrindx_rvis = corrindx_rvis,
+                                       ivis = ivis,
+                                       iviserr = iviserr,
+                                       corrindx_ivis = corrindx_ivis,
                                        ucoord = ucoord,
                                        vcoord = vcoord,
                                        sta_index = sta_index,
@@ -923,26 +1051,28 @@ local oifits_new_vis2;
      be ignored).  All members of DB are specified by keywords (KEY1 = VALUE1,
      KEY2 = VALUE2, etc).
 
-     As of revision 1 of OI-FITS standard, the members of an OI_VIS2
+     As of revision 2 of OI-FITS standard, the members of an OI_VIS2
      data-block are:
 
-     Keyword    Units   Description
-     --------------------------------------------------------------
-     revn               revision number (default is last version)
-     date_obs           UTC start date of observations
-     arrname            name of corresponding array
-     insname            name of corresponding detector
-     target_id          target number as index into OI_TARGET table
-     time       s       UTC time of observation
-     mjd        day     modified Julian Day
-     int_time   s       integration time
-     vis2data           squared visibility
-     vis2err            error in squared visibility
-     ucoord     m       U coordinate of the data
-     vcoord     m       V coordinate of the data
-     sta_index          station numbers contributing to the data
-     flag               flag
-     --------------------------------------------------------------
+     Keyword          Units  Description
+     --------------------------------------------------------------------------
+     revn                    revision number (default is last version)
+     date_obs                UTC start date of observations
+     arrname                 name of corresponding OI_ARRAY table
+     insname                 name of corresponding OI_WAVELENGTH table
+     corrname                name of corresponding OI_CORR table
+     target_id               target number as index into OI_TARGET table
+     time               s    UTC time of observation
+     mjd                day  modified Julian Day
+     int_time           s    integration time
+     vis2data                squared visibility
+     vis2err                 error in squared visibility
+     corrindx_vis2data       index into correlation matrix for 1st VIS2DATA element
+     ucoord             m    U coordinate of the data
+     vcoord             m    V coordinate of the data
+     sta_index               station numbers contributing to the data
+     flag                    flag
+     --------------------------------------------------------------------------
 
    SEE ALSO: oifits_insert, oifits_get, oifits_new, oifits_new_array,
              oifits_new_target, oifits_new_wavelength, oifits_new_vis,
@@ -952,12 +1082,14 @@ func oifits_new_vis2(master,
                      date_obs=,
                      arrname=,
                      insname=,
+                     corrname=,
                      target_id=,
                      time=,
                      mjd=,
                      int_time=,
                      vis2data=,
                      vis2err=,
+                     corrindx_vis2data=,
                      ucoord=,
                      vcoord=,
                      sta_index=,
@@ -970,12 +1102,14 @@ func oifits_new_vis2(master,
                                        date_obs = date_obs,
                                        arrname = arrname,
                                        insname = insname,
+                                       corrname = corrname,
                                        target_id = target_id,
                                        time = time,
                                        mjd = mjd,
                                        int_time = int_time,
                                        vis2data = vis2data,
                                        vis2err = vis2err,
+                                       corrindx_vis2data = corrindx_vis2data,
                                        ucoord = ucoord,
                                        vcoord = vcoord,
                                        sta_index = sta_index,
@@ -1000,30 +1134,33 @@ local oifits_new_t3;
      value can be ignored).  All members of DB are specified by keywords (KEY1
      = VALUE1, KEY2 = VALUE2, etc).
 
-     As of revision 1 of OI-FITS standard, the members of an OI_T3 data-block
+     As of revision 2 of OI-FITS standard, the members of an OI_T3 data-block
      are:
 
-     Keyword    Units   Description
-     --------------------------------------------------------------
-     revn               revision number (default is last version)
-     date_obs           UTC start date of observations
-     arrname            name of corresponding array
-     insname            name of corresponding detector
-     target_id          target number as index into OI_TARGET table
-     time       s       UTC time of observation
-     mjd        day     modified Julian Day
-     int_time   s       integration time
-     t3amp              triple product amplitude
-     t3amperr           error in triple product amplitude
-     t3phi      deg     triple product phase
-     t3phierr   deg     error in triple product phase
-     u1coord    m       U coordinate of baseline AB of the triangle
-     v1coord    m       V coordinate of baseline AB of the triangle
-     u2coord    m       U coordinate of baseline BC of the triangle
-     v2coord    m       V coordinate of baseline BC of the triangle
-     sta_index          station numbers contributing to the data
-     flag               flag
-     --------------------------------------------------------------
+     Keyword       Units  Description
+     ------------------------------------------------------------------------
+     revn                 revision number (default is last version)
+     date_obs             UTC start date of observations
+     arrname              name of corresponding OI_ARRAY table
+     insname              name of corresponding OI_WAVELENGTH table
+     corrname             name of corresponding OI_CORR table
+     target_id            target number as index into OI_TARGET table
+     time            s    UTC time of observation
+     mjd             day  modified Julian Day
+     int_time        s    integration time
+     t3amp                triple product amplitude
+     t3amperr             error in triple product amplitude
+     corrindx_t3amp       index into correlation matrix for 1st T3AMP element
+     t3phi           deg  triple product phase
+     t3phierr        deg  error in triple product phase
+     corrindx_t3phi       index into correlation matrix for 1st T3PHI element
+     u1coord         m    U coordinate of baseline AB of the triangle
+     v1coord         m    V coordinate of baseline AB of the triangle
+     u2coord         m    U coordinate of baseline BC of the triangle
+     v2coord         m    V coordinate of baseline BC of the triangle
+     sta_index            station numbers contributing to the data
+     flag                 flag
+     ------------------------------------------------------------------------
 
    SEE ALSO: oifits_insert, oifits_get, oifits_new, oifits_new_array,
              oifits_new_target, oifits_new_wavelength, oifits_new_vis,
@@ -1033,14 +1170,17 @@ func oifits_new_t3(master,
                    date_obs=,
                    arrname=,
                    insname=,
+                   corrname=,
                    target_id=,
                    time=,
                    mjd=,
                    int_time=,
                    t3amp=,
                    t3amperr=,
+                   corrindx_t3amp=,
                    t3phi=,
                    t3phierr=,
+                   corrindx_t3phi=,
                    u1coord=,
                    v1coord=,
                    u2coord=,
@@ -1055,14 +1195,17 @@ func oifits_new_t3(master,
                                        date_obs = date_obs,
                                        arrname = arrname,
                                        insname = insname,
+                                       corrname = corrname,
                                        target_id = target_id,
                                        time = time,
                                        mjd = mjd,
                                        int_time = int_time,
                                        t3amp = t3amp,
                                        t3amperr = t3amperr,
+                                       corrindx_t3amp = corrindx_t3amp,
                                        t3phi = t3phi,
                                        t3phierr = t3phierr,
+                                       corrindx_t3phi = corrindx_t3phi,
                                        u1coord = u1coord,
                                        v1coord = v1coord,
                                        u2coord = u2coord,
@@ -1089,7 +1232,7 @@ local oifits_new_flux;
      value can be ignored).  All members of DB are specified by keywords (KEY1
      = VALUE1, KEY2 = VALUE2, etc).
 
-     As of revision 1 of OI-FITS standard, the members of an OI_FLUX
+     As of revision 2 of OI-FITS standard, the members of an OI_FLUX
      data-block are:
 
      Keyword    Units   Description
@@ -1149,6 +1292,137 @@ func oifits_new_flux(master,
                                        corrindx_fluxdata = corrindx_fluxdata,
                                        sta_index = sta_index,
                                        flag = flag));
+  if (numberof(_oifits_error_stack)) {
+    _oifits_report_error;
+  }
+  if (master) {
+    oifits_insert, master, db;
+  }
+  return db;
+}
+
+local oifits_new_inspol;
+/* DOCUMENT db = oifits_new_inspol(key1 = value1, ...);
+       -or- db = oifits_new_inspol(master, key1 = value1, ...);
+       -or- oifits_new_inspol, master, key1 = value1, ...;
+
+     Creates a new OI-FITS data-block of type OI_INSPOL (beam polarization).
+     If MASTER is non-nil, it must be an existing OI-FITS master instance to
+     store the new data-block (in this case the returned value can be
+     ignored).  All members of DB are specified by keywords (KEY1 = VALUE1,
+     KEY2 = VALUE2, etc).
+
+     As of revision 2 of OI-FITS standard, the members of an OI_INSPOL
+     data-block are:
+
+     Keyword    Units  Description
+     ---------------------------------------------------------------------
+     revn              revision number (default is last version)
+     date_obs          UTC start date of observations
+     npol              number of polarisation types in this table
+     arrname           name of corresponding OI_ARRAY table
+     orient            orientation of the Jones matrix, could be "NORTH"
+                       (for on-sky orientation), or "LABORATORY"
+     model             method for estimating the Jones matrix
+     target_id         target number as index into OI_TARGET table
+     insname           name of corresponding OI_WAVELENGTH table
+     mjd_obs     day   modified Julian Day, start of time lapse
+     mjd_end     day   modified Julian Day, end of time lapse
+     jxx               complex Jones matrix component along X axis
+     jyy               complex Jones matrix component along Y axis
+     jxy               complex Jones matrix component between X and Y axis
+     jyx               complex Jones matrix component between Y and X axis
+     sta_index         station number for the Jones matrix
+     ---------------------------------------------------------------------
+
+   SEE ALSO: oifits_insert, oifits_get, oifits_new, oifits_new_array,
+             oifits_new_target, oifits_new_wavelength. */
+func oifits_new_inspol(master,
+                       revn=,
+                       date_obs=,
+                       npol=,
+                       arrname=,
+                       orient=,
+                       model=,
+                       target_id=,
+                       mjd_obs=,
+                       mjd_end=,
+                       jxx=,
+                       jyy=,
+                       jxy=,
+                       jyx=,
+                       sta_index=)
+{
+  local _oifits_error_stack;
+  _oifits_on_error = _oifits_on_error_stop;
+  db = _oifits_datablock_builder(OIFITS_TYPE_INSPOL,
+                                 h_new(revn = revn,
+                                       date_obs = date_obs,
+                                       npol = npol,
+                                       arrname = arrname,
+                                       orient = orient,
+                                       model = model,
+                                       target_id = target_id,
+                                       insname = insname,
+                                       mjd_obs = mjd_obs,
+                                       mjd_end = mjd_end,
+                                       jxx = jxx,
+                                       jyy = jyy,
+                                       jxy = jxy,
+                                       jyx = jyx,
+                                       sta_index = sta_index));
+  if (numberof(_oifits_error_stack)) {
+    _oifits_report_error;
+  }
+  if (master) {
+    oifits_insert, master, db;
+  }
+  return db;
+}
+
+local oifits_new_corr;
+/* DOCUMENT db = oifits_new_corr(key1 = value1, ...);
+       -or- db = oifits_new_corr(master, key1 = value1, ...);
+       -or- oifits_new_corr, master, key1 = value1, ...;
+
+     Creates a new OI-FITS data-block of type OI_CORR (correlations).
+     If MASTER is non-nil, it must be an existing OI-FITS master instance to
+     store the new data-block (in this case the returned value can be
+     ignored).  All members of DB are specified by keywords (KEY1 = VALUE1,
+     KEY2 = VALUE2, etc).
+
+     As of revision 2 of OI-FITS standard, the members of an OI_CORR
+     data-block are:
+
+     Keyword  Units  Description
+     ----------------------------------------------------------
+     revn            revision number (default is last version)
+     corrname        name of correlated data set
+     ndata           number of correlated data
+     iindx           first index of correlation matrix element
+     jindx           second index of correlation matrix element
+     corr            matrix element at (iindx,jindx)
+     ----------------------------------------------------------
+
+   SEE ALSO: oifits_insert, oifits_get, oifits_new, oifits_new_array,
+             oifits_new_target, oifits_new_wavelength. */
+func oifits_new_corr(master,
+                     revn=,
+                     corrname=,
+                     ndata=,
+                     iindx=,
+                     jindx=,
+                     corr=)
+{
+  local _oifits_error_stack;
+  _oifits_on_error = _oifits_on_error_stop;
+  db = _oifits_datablock_builder(OIFITS_TYPE_CORR,
+                                 h_new(revn = revn,
+                                       corrname = corrname,
+                                       ndata = ndata,
+                                       iindx = iindx,
+                                       jindx = jindx,
+                                       corr = corr));
   if (numberof(_oifits_error_stack)) {
     _oifits_report_error;
   }
@@ -1486,6 +1760,17 @@ func _oifits_datablock_builder_fix_type(ctype, &value)
   if (ctype == _OIFITS_CTYPE_LOGICAL) {
     return (s == int ? 0 : -1);
   }
+  if (ctype == _OIFITS_CTYPE_COMPLEX) {
+    if (s == complex) {
+      return 0;
+    }
+    if (s == double || s == float || s == long || s == int ||
+        s == short || s == char) {
+      value = complex(value);
+      return 0;
+    }
+    return -1;
+  }
   return -1;
 }
 
@@ -1669,11 +1954,8 @@ func oifits_is_data(db) { return db.__is_data; }
  * SEE ALSO: oifits_get_type.
  */
 
-local oifits_get, oifits_get_time, oifits_get_mjd, oifits_get_int_time, oifits_get_sta_index, oifits_get_flag, oifits_get_visamp, oifits_get_visamperr, oifits_get_visphi, oifits_get_visphierr, oifits_get_vis2data, oifits_get_vis2err, oifits_get_t3amp, oifits_get_t3amperr, oifits_get_t3phi, oifits_get_t3phierr, oifits_get_ucoord, oifits_get_vcoord, oifits_get_u1coord, oifits_get_v1coord, oifits_get_u2coord, oifits_get_v2coord;
-local oifits_get_date_obs, oifits_get_arrname, oifits_get_insname, oifits_get_corrname, oifits_get_revn, oifits_get_frame, oifits_get_arrayx, oifits_get_arrayy, oifits_get_arrayz, oifits_get_tel_name, oifits_get_sta_name, oifits_get_sta_index, oifits_get_diameter, oifits_get_staxyz;
+local oifits_get_amporder, oifits_get_amptyp, oifits_get_arrayx, oifits_get_arrayy, oifits_get_arrayz, oifits_get_arrname, oifits_get_calstat, oifits_get_category, oifits_get_corr, oifits_get_corrindx_fluxdata, oifits_get_corrindx_ivis, oifits_get_corrindx_rvis, oifits_get_corrindx_t3amp, oifits_get_corrindx_t3phi, oifits_get_corrindx_vis2data, oifits_get_corrindx_visamp, oifits_get_corrindx_visphi, oifits_get_corrname, oifits_get_date_obs, oifits_get_dec_err, oifits_get_decep0, oifits_get_diameter, oifits_get_equinox, oifits_get_flag, oifits_get_fluxdata, oifits_get_fluxerr, oifits_get_fov, oifits_get_fovtype, oifits_get_frame, oifits_get_iindx, oifits_get_insname, oifits_get_int_time, oifits_get_ivis, oifits_get_iviserr, oifits_get_jindx, oifits_get_jxx, oifits_get_jxy, oifits_get_jyx, oifits_get_jyy, oifits_get_mjd, oifits_get_mjd_end, oifits_get_mjd_obs, oifits_get_model, oifits_get_ndata, oifits_get_npol, oifits_get_orient, oifits_get_para_err, oifits_get_parallax, oifits_get_phiorder, oifits_get_phityp, oifits_get_pmdec, oifits_get_pmdec_err, oifits_get_pmra, oifits_get_pmra_err, oifits_get_ra_err, oifits_get_raep0, oifits_get_revn, oifits_get_rvis, oifits_get_rviserr, oifits_get_spectyp, oifits_get_sta_index, oifits_get_sta_name, oifits_get_staxyz, oifits_get_sysvel, oifits_get_t3amp, oifits_get_t3amperr, oifits_get_t3phi, oifits_get_t3phierr, oifits_get_target, oifits_get_target_id, oifits_get_tel_name, oifits_get_time, oifits_get_u1coord, oifits_get_u2coord, oifits_get_ucoord, oifits_get_v1coord, oifits_get_v2coord, oifits_get_vcoord, oifits_get_veldef, oifits_get_veltyp, oifits_get_vis2data, oifits_get_vis2err, oifits_get_visamp, oifits_get_visamperr, oifits_get_visphi, oifits_get_visphierr, oifits_get_visrefmap;
 local oifits_get_eff_wave, oifits_get_eff_band;
-local oifits_get_target_id, oifits_get_target, oifits_get_raep0, oifits_get_decep0, oifits_get_equinox, oifits_get_ra_err, oifits_get_dec_err, oifits_get_sysvel, oifits_get_veltyp, oifits_get_veldef, oifits_get_pmra, oifits_get_pmdec, oifits_get_pmra_err, oifits_get_pmdec_err, oifits_get_parallax, oifits_get_para_err, oifits_get_spectyp;
-local oifits_get_fov, oifits_get_fovtype, oifits_get_calstat, oifits_get_fluxdata, oifits_get_fluxerr, oifits_get_corrindx_fluxdata;
 /* DOCUMENT oifits_get_...(master, db);
 
      This functions query a given attribute of OI-FITS data block DB
@@ -1716,6 +1998,8 @@ local oifits_get_fov, oifits_get_fovtype, oifits_get_calstat, oifits_get_fluxdat
      oifits_get_sta_index - get station number
      oifits_get_diameter  - get element diameter (m)
      oifits_get_staxyz    - get station coordinate relative to array center (m)
+     oifits_get_fov       - get size of photometric field of view (arcsec)
+     oifits_get_fovtype   - get model for FOV: "FWHM" or "RADIUS"
 
 
      Query attributes for OI_TARGET data block:
@@ -1737,6 +2021,7 @@ local oifits_get_fov, oifits_get_fovtype, oifits_get_calstat, oifits_get_fluxdat
      oifits_get_parallax  - get parallax (deg)
      oifits_get_para_err  - get error in parallax (deg)
      oifits_get_spectyp   - get spectral type
+     oifits_get_category  - get category of target: "CAL" or "SCI"
 
 
      Query attributes for OI_WAVELENGTH data block:
@@ -1748,67 +2033,93 @@ local oifits_get_fov, oifits_get_fovtype, oifits_get_calstat, oifits_get_fluxdat
 
    SEE ALSO: oifits_new.
 */
-func oifits_get_time(master, db)      { return db.time; }
-func oifits_get_mjd(master, db)       { return db.mjd; }
-func oifits_get_int_time(master, db)  { return db.int_time; }
-func oifits_get_sta_index(master, db) { return db.sta_index; }
-func oifits_get_flag(master, db)      { return db.flag; }
-func oifits_get_visamp(master, db)    { return db.visamp; }
-func oifits_get_visamperr(master, db) { return db.visamperr; }
-func oifits_get_visphi(master, db)    { return db.visphi; }
-func oifits_get_visphierr(master, db) { return db.visphierr; }
-func oifits_get_vis2data(master, db)  { return db.vis2data; }
-func oifits_get_vis2err(master, db)   { return db.vis2err; }
-func oifits_get_t3amp(master, db)     { return db.t3amp; }
-func oifits_get_t3amperr(master, db)  { return db.t3amperr; }
-func oifits_get_t3phi(master, db)     { return db.t3phi; }
-func oifits_get_t3phierr(master, db)  { return db.t3phierr; }
-func oifits_get_ucoord(master, db)    { return db.ucoord; }
-func oifits_get_vcoord(master, db)    { return db.vcoord; }
-func oifits_get_u1coord(master, db)   { return db.u1coord; }
-func oifits_get_v1coord(master, db)   { return db.v1coord; }
-func oifits_get_u2coord(master, db)   { return db.u2coord; }
-func oifits_get_v2coord(master, db)   { return db.v2coord; }
-
-func oifits_get_date_obs(master, db)  { return db.date_obs; }
-func oifits_get_arrname(master, db)   { return db.arrname; }
-func oifits_get_insname(master, db)   { return db.insname; }
-func oifits_get_corrname(master, db)  { return db.corrname; }
-func oifits_get_revn(master, db)      { return db.revn; }
-func oifits_get_frame(master, db)     { return db.frame; }
-func oifits_get_arrayx(master, db)    { return db.arrayx; }
-func oifits_get_arrayy(master, db)    { return db.arrayy; }
-func oifits_get_arrayz(master, db)    { return db.arrayz; }
-func oifits_get_tel_name(master, db)  { return db.tel_name; }
-func oifits_get_sta_name(master, db)  { return db.sta_name; }
-func oifits_get_sta_index(master, db) { return db.sta_index; }
-func oifits_get_diameter(master, db)  { return db.diameter; }
-func oifits_get_staxyz(master, db)    { return db.staxyz; }
-
-func oifits_get_target_id(master, db) { return db.target_id; }
-func oifits_get_target(master, db)    { return db.target; }
-func oifits_get_raep0(master, db)     { return db.raep0; }
-func oifits_get_decep0(master, db)    { return db.decep0; }
-func oifits_get_equinox(master, db)   { return db.equinox; }
-func oifits_get_ra_err(master, db)    { return db.ra_err; }
-func oifits_get_dec_err(master, db)   { return db.dec_err; }
-func oifits_get_sysvel(master, db)    { return db.sysvel; }
-func oifits_get_veltyp(master, db)    { return db.veltyp; }
-func oifits_get_veldef(master, db)    { return db.veldef; }
-func oifits_get_pmra(master, db)      { return db.pmra; }
-func oifits_get_pmdec(master, db)     { return db.pmdec; }
-func oifits_get_pmra_err(master, db)  { return db.pmra_err; }
-func oifits_get_pmdec_err(master, db) { return db.pmdec_err; }
-func oifits_get_parallax(master, db)  { return db.parallax; }
-func oifits_get_para_err(master, db)  { return db.para_err; }
-func oifits_get_spectyp(master, db)   { return db.spectyp; }
-
-func oifits_get_fov(master, db)       { return db.fov; }
-func oifits_get_fovtype(master, db)   { return db.fovtype; }
-func oifits_get_calstat(master, db)   { return db.calstat; }
-func oifits_get_fluxdata(master, db)  { return db.fluxdata; }
-func oifits_get_fluxerr(master, db)   { return db.fluxerr; }
+func oifits_get_amporder(master, db)          { return db.amporder; }
+func oifits_get_amptyp(master, db)            { return db.amptyp; }
+func oifits_get_arrayx(master, db)            { return db.arrayx; }
+func oifits_get_arrayy(master, db)            { return db.arrayy; }
+func oifits_get_arrayz(master, db)            { return db.arrayz; }
+func oifits_get_arrname(master, db)           { return db.arrname; }
+func oifits_get_calstat(master, db)           { return db.calstat; }
+func oifits_get_category(master, db)          { return db.category; }
+func oifits_get_corr(master, db)              { return db.corr; }
 func oifits_get_corrindx_fluxdata(master, db) { return db.corrindx_fluxdata; }
+func oifits_get_corrindx_ivis(master, db)     { return db.corrindx_ivis; }
+func oifits_get_corrindx_rvis(master, db)     { return db.corrindx_rvis; }
+func oifits_get_corrindx_t3amp(master, db)    { return db.corrindx_t3amp; }
+func oifits_get_corrindx_t3phi(master, db)    { return db.corrindx_t3phi; }
+func oifits_get_corrindx_vis2data(master, db) { return db.corrindx_vis2data; }
+func oifits_get_corrindx_visamp(master, db)   { return db.corrindx_visamp; }
+func oifits_get_corrindx_visphi(master, db)   { return db.corrindx_visphi; }
+func oifits_get_corrname(master, db)          { return db.corrname; }
+func oifits_get_date_obs(master, db)          { return db.date_obs; }
+func oifits_get_dec_err(master, db)           { return db.dec_err; }
+func oifits_get_decep0(master, db)            { return db.decep0; }
+func oifits_get_diameter(master, db)          { return db.diameter; }
+func oifits_get_equinox(master, db)           { return db.equinox; }
+func oifits_get_flag(master, db)              { return db.flag; }
+func oifits_get_fluxdata(master, db)          { return db.fluxdata; }
+func oifits_get_fluxerr(master, db)           { return db.fluxerr; }
+func oifits_get_fov(master, db)               { return db.fov; }
+func oifits_get_fovtype(master, db)           { return db.fovtype; }
+func oifits_get_frame(master, db)             { return db.frame; }
+func oifits_get_iindx(master, db)             { return db.iindx; }
+func oifits_get_insname(master, db)           { return db.insname; }
+func oifits_get_int_time(master, db)          { return db.int_time; }
+func oifits_get_ivis(master, db)              { return db.ivis; }
+func oifits_get_iviserr(master, db)           { return db.iviserr; }
+func oifits_get_jindx(master, db)             { return db.jindx; }
+func oifits_get_jxx(master, db)               { return db.jxx; }
+func oifits_get_jxy(master, db)               { return db.jxy; }
+func oifits_get_jyx(master, db)               { return db.jyx; }
+func oifits_get_jyy(master, db)               { return db.jyy; }
+func oifits_get_mjd(master, db)               { return db.mjd; }
+func oifits_get_mjd_end(master, db)           { return db.mjd_end; }
+func oifits_get_mjd_obs(master, db)           { return db.mjd_obs; }
+func oifits_get_model(master, db)             { return db.model; }
+func oifits_get_ndata(master, db)             { return db.ndata; }
+func oifits_get_npol(master, db)              { return db.npol; }
+func oifits_get_orient(master, db)            { return db.orient; }
+func oifits_get_para_err(master, db)          { return db.para_err; }
+func oifits_get_parallax(master, db)          { return db.parallax; }
+func oifits_get_phiorder(master, db)          { return db.phiorder; }
+func oifits_get_phityp(master, db)            { return db.phityp; }
+func oifits_get_pmdec(master, db)             { return db.pmdec; }
+func oifits_get_pmdec_err(master, db)         { return db.pmdec_err; }
+func oifits_get_pmra(master, db)              { return db.pmra; }
+func oifits_get_pmra_err(master, db)          { return db.pmra_err; }
+func oifits_get_ra_err(master, db)            { return db.ra_err; }
+func oifits_get_raep0(master, db)             { return db.raep0; }
+func oifits_get_revn(master, db)              { return db.revn; }
+func oifits_get_rvis(master, db)              { return db.rvis; }
+func oifits_get_rviserr(master, db)           { return db.rviserr; }
+func oifits_get_spectyp(master, db)           { return db.spectyp; }
+func oifits_get_sta_index(master, db)         { return db.sta_index; }
+func oifits_get_sta_name(master, db)          { return db.sta_name; }
+func oifits_get_staxyz(master, db)            { return db.staxyz; }
+func oifits_get_sysvel(master, db)            { return db.sysvel; }
+func oifits_get_t3amp(master, db)             { return db.t3amp; }
+func oifits_get_t3amperr(master, db)          { return db.t3amperr; }
+func oifits_get_t3phi(master, db)             { return db.t3phi; }
+func oifits_get_t3phierr(master, db)          { return db.t3phierr; }
+func oifits_get_target(master, db)            { return db.target; }
+func oifits_get_target_id(master, db)         { return db.target_id; }
+func oifits_get_tel_name(master, db)          { return db.tel_name; }
+func oifits_get_time(master, db)              { return db.time; }
+func oifits_get_u1coord(master, db)           { return db.u1coord; }
+func oifits_get_u2coord(master, db)           { return db.u2coord; }
+func oifits_get_ucoord(master, db)            { return db.ucoord; }
+func oifits_get_v1coord(master, db)           { return db.v1coord; }
+func oifits_get_v2coord(master, db)           { return db.v2coord; }
+func oifits_get_vcoord(master, db)            { return db.vcoord; }
+func oifits_get_veldef(master, db)            { return db.veldef; }
+func oifits_get_veltyp(master, db)            { return db.veltyp; }
+func oifits_get_vis2data(master, db)          { return db.vis2data; }
+func oifits_get_vis2err(master, db)           { return db.vis2err; }
+func oifits_get_visamp(master, db)            { return db.visamp; }
+func oifits_get_visamperr(master, db)         { return db.visamperr; }
+func oifits_get_visphi(master, db)            { return db.visphi; }
+func oifits_get_visphierr(master, db)         { return db.visphierr; }
+func oifits_get_visrefmap(master, db)         { return db.visrefmap; }
 
 func oifits_get_eff_wave(master, db)
 {
@@ -2397,6 +2708,31 @@ _OIFITS_CLASSDEF_TARGET_1 = \
  "2 PARA_ERR   1E deg    error in parallax",
  "2 SPECTYP   16A -      spectral type"];
 
+/*-------------------------------------------*/
+/* OI_TARGET CLASS DEFINITION (2ND REVISION) */
+/*-------------------------------------------*/
+
+_OIFITS_CLASSDEF_TARGET_2 = \
+["0 OI_REVN    1I -      revision number of the table definition",
+ "2 TARGET_ID  1I -      index number",
+ "2 TARGET    16A -      target name",
+ "2 RAEP0      1D deg    RA at mean equinox",
+ "2 DECEP0     1D deg    DEC at mean equinox",
+ "2 EQUINOX    1E yr     equinox",
+ "2 RA_ERR     1D deg    error in RA at mean equinox",
+ "2 DEC_ERR    1D deg    error in DEC at mean equino",
+ "2 SYSVEL     1D m/s    systemic radial velocity",
+ "2 VELTYP     8A -      reference for radial velocity",
+ "2 VELDEF     8A -      definition of radial velocity",
+ "2 PMRA       1D deg/yr proper motion in RA",
+ "2 PMDEC      1D deg/yr proper motion in DEC",
+ "2 PMRA_ERR   1D deg/yr error of proper motion in RA",
+ "2 PMDEC_ERR  1D deg/yr error of proper motion in DEC",
+ "2 PARALLAX   1E deg    parallax",
+ "2 PARA_ERR   1E deg    error in parallax",
+ "2 SPECTYP   16A -      spectral type",
+ "3 CATEGORY   3A -      'CAL' or 'SCI'"];
+
 /*------------------------------------------*/
 /* OI_ARRAY CLASS DEFINITION (1ST REVISION) */
 /*------------------------------------------*/
@@ -2414,6 +2750,25 @@ _OIFITS_CLASSDEF_ARRAY_1 = \
  "2 DIAMETER   1E m element diameter",
  "2 STAXYZ     3D m station coordinates relative to array center"];
 
+/*------------------------------------------*/
+/* OI_ARRAY CLASS DEFINITION (2ND REVISION) */
+/*------------------------------------------*/
+
+_OIFITS_CLASSDEF_ARRAY_2 = \
+["0 OI_REVN    1I -      revision number of the table definition",
+ "0 ARRNAME    1A -      array name for cross-referencing",
+ "0 FRAME      1A -      coordinate frame",
+ "0 ARRAYX     1D m      array center X-coordinate",
+ "0 ARRAYY     1D m      array center Y-coordinate",
+ "0 ARRAYZ     1D m      array center Z-coordinate",
+ "2 TEL_NAME  16A -      telescope name",
+ "2 STA_NAME  16A -      station name",
+ "2 STA_INDEX  1I -      station index",
+ "2 DIAMETER   1E m      element diameter",
+ "2 STAXYZ     3D m      station coordinates relative to array center",
+ "2 FOV        1D arcsec photometric field of view",
+ "2 FOVTYPE    6A -      model for FOV: 'FWHM' or 'RADIUS'"];
+
 /*-----------------------------------------------*/
 /* OI_WAVELENGTH CLASS DEFINITION (1ST REVISION) */
 /*-----------------------------------------------*/
@@ -2424,6 +2779,12 @@ _OIFITS_CLASSDEF_WAVELENGTH_1 = \
  "2 EFF_WAVE   1E m effective wavelength of channel",
  "2 EFF_BAND   1E m effective bandpass of channel"];
 
+/*-----------------------------------------------*/
+/* OI_WAVELENGTH CLASS DEFINITION (2ND REVISION) */
+/*-----------------------------------------------*/
+
+_OIFITS_CLASSDEF_WAVELENGTH_2 = _OIFITS_CLASSDEF_WAVELENGTH_1;
+
 /*----------------------------------------*/
 /* OI_VIS CLASS DEFINITION (1ST REVISION) */
 /*----------------------------------------*/
@@ -2431,8 +2792,8 @@ _OIFITS_CLASSDEF_WAVELENGTH_1 = \
 _OIFITS_CLASSDEF_VIS_1 = \
 ["0 OI_REVN    1I -   revision number of the table definition",
  "0 DATE-OBS   1A -   UTC start date of observations",
- "1 ARRNAME    1A -   name of corresponding array",
- "0 INSNAME    1A -   name of corresponding detector",
+ "1 ARRNAME    1A -   name of corresponding OI_ARRAY table",
+ "0 INSNAME    1A -   name of corresponding OI_WAVELENGTH table",
  "2 TARGET_ID  1I -   target number as index into OI_TARGET table",
  "2 TIME       1D s   UTC time of observation",
  "2 MJD        1D day modified Julian Day",
@@ -2446,6 +2807,42 @@ _OIFITS_CLASSDEF_VIS_1 = \
  "2 STA_INDEX  2I -   station numbers contributing to the data",
  "2 FLAG      -1L -   flag"];
 
+/*----------------------------------------*/
+/* OI_VIS CLASS DEFINITION (2ND REVISION) */
+/*----------------------------------------*/
+
+_OIFITS_CLASSDEF_VIS_2 = \
+["0 OI_REVN          1I -   revision number of the table definition",
+ "0 DATE-OBS         1A -   UTC start date of observations",
+ "0 ARRNAME          1A -   name of corresponding OI_ARRAY table",
+ "0 INSNAME          1A -   name of corresponding OI_WAVELENGTH table",
+ "1 CORRNAME         1A -   name of corresponding OI_CORR table",
+ "1 AMPTYP           1A -   'absolute', 'differential', or 'correlated flux'",
+ "1 PHITYP           1A -   'absolute', or 'differential'",
+ "1 AMPORDER         1I -   polynomial fit order for differential chromatic amplitudes",
+ "1 PHIORDER         1I -   polynomial fit order for differential chromatic phases",
+ "2 TARGET_ID        1I -   target number as index into OI_TARGET table",
+ "2 TIME             1D s   zero, for backward compatibility",
+ "2 MJD              1D day modified Julian Day",
+ "2 INT_TIME         1D s   integration time",
+ "2 VISAMP          -1D -   visibility amplitude",
+ "2 VISAMPERR       -1D -   error in visibility amplitude",
+ "3 CORRINDX_VISAMP  1J -   index into correlation matrix for 1st VISAMP element",
+ "2 VISPHI          -1D deg visibility phase",
+ "2 VISPHIERR       -1D deg error in visibility phase",
+ "3 CORRINDX_VISPHI  1J -   index into correlation matrix for 1st VISPHI element",
+ "3 VISREFMAP       -1L -   matrix indicating, if true, which spectral channels were taken as reference for differential chromatic visibility computation",
+ "3 RVIS            -1D -   real part of complex coherent flux",
+ "3 RVISERR         -1D -   error on RVIS",
+ "3 CORRINDX_RVIS    1J -   index into correlation matrix for 1st RVIS element",
+ "3 IVIS            -1D -   imaginary part of complex coherent flux",
+ "3 IVISERR         -1D -   error on IVIS",
+ "3 CORRINDX_IVIS    1J -   index into correlation matrix for 1st IVIS element",
+ "2 UCOORD           1D m   U coordinate of the data",
+ "2 VCOORD           1D m   V coordinate of the data",
+ "2 STA_INDEX        2I -   station numbers contributing to the data",
+ "2 FLAG            -1L -   flag"];
+
 /*-----------------------------------------*/
 /* OI_VIS2 CLASS DEFINITION (1ST REVISION) */
 /*-----------------------------------------*/
@@ -2453,8 +2850,8 @@ _OIFITS_CLASSDEF_VIS_1 = \
 _OIFITS_CLASSDEF_VIS2_1 = \
 ["0 OI_REVN    1I -   revision number of the table definition",
  "0 DATE-OBS   1A -   UTC start date of observations",
- "1 ARRNAME    1A -   name of corresponding array",
- "0 INSNAME    1A -   name of corresponding detector",
+ "1 ARRNAME    1A -   name of corresponding OI_ARRAY table",
+ "0 INSNAME    1A -   name of corresponding OI_WAVELENGTH table",
  "2 TARGET_ID  1I -   target number as index into OI_TARGET table",
  "2 TIME       1D s   UTC time of observation",
  "2 MJD        1D day modified Julian Day",
@@ -2466,6 +2863,28 @@ _OIFITS_CLASSDEF_VIS2_1 = \
  "2 STA_INDEX  2I -   station numbers contributing to the data",
  "2 FLAG      -1L -   flag"];
 
+/*-----------------------------------------*/
+/* OI_VIS2 CLASS DEFINITION (2ND REVISION) */
+/*-----------------------------------------*/
+
+_OIFITS_CLASSDEF_VIS2_2 = \
+["0 OI_REVN            1I -   revision number of the table definition",
+ "0 DATE-OBS           1A -   UTC start date of observations",
+ "0 ARRNAME            1A -   name of corresponding OI_ARRAY table",
+ "0 INSNAME            1A -   name of corresponding OI_WAVELENGTH table",
+ "1 CORRNAME           1A -   name of corresponding OI_CORR table",
+ "2 TARGET_ID          1I -   target number as index into OI_TARGET table",
+ "2 TIME               1D s   zero, for backward compatibility",
+ "2 MJD                1D day modified Julian Day",
+ "2 INT_TIME           1D s   integration time",
+ "2 VIS2DATA          -1D -   squared visibility",
+ "2 VIS2ERR           -1D -   error in squared visibility",
+ "3 CORRINDX_VIS2DATA  1J -   index into correlation matrix for 1st VIS2DATA element",
+ "2 UCOORD             1D m   U coordinate of the data",
+ "2 VCOORD             1D m   V coordinate of the data",
+ "2 STA_INDEX          2I -   station numbers contributing to the data",
+ "2 FLAG              -1L -   flag"];
+
 /*---------------------------------------*/
 /* OI_T3 CLASS DEFINITION (1ST REVISION) */
 /*---------------------------------------*/
@@ -2473,8 +2892,8 @@ _OIFITS_CLASSDEF_VIS2_1 = \
 _OIFITS_CLASSDEF_T3_1 = \
 ["0 OI_REVN    1I -   revision number of the table definition",
  "0 DATE-OBS   1A -   UTC start date of observations",
- "1 ARRNAME    1A -   name of corresponding array",
- "0 INSNAME    1A -   name of corresponding detector",
+ "1 ARRNAME    1A -   name of corresponding OI_ARRAY table",
+ "0 INSNAME    1A -   name of corresponding OI_WAVELENGTH table",
  "2 TARGET_ID  1I -   target number as index into OI_TARGET table",
  "2 TIME       1D s   UTC time of observation",
  "2 MJD        1D day modified Julian Day",
@@ -2490,6 +2909,33 @@ _OIFITS_CLASSDEF_T3_1 = \
  "2 STA_INDEX  3I -   station numbers contributing to the data",
  "2 FLAG      -1L -   flag"];
 
+/*---------------------------------------*/
+/* OI_T3 CLASS DEFINITION (2ND REVISION) */
+/*---------------------------------------*/
+
+_OIFITS_CLASSDEF_T3_2 = \
+["0 OI_REVN            1I -   revision number of the table definition",
+ "0 DATE-OBS           1A -   UTC start date of observations",
+ "0 ARRNAME            1A -   name of corresponding OI_ARRAY table",
+ "0 INSNAME            1A -   name of corresponding OI_WAVELENGTH table",
+ "1 CORRNAME           1A -   name of corresponding OI_CORR table",
+ "2 TARGET_ID          1I -   target number as index into OI_TARGET table",
+ "2 TIME               1D s   zero, for backward compatibility",
+ "2 MJD                1D day modified Julian Day",
+ "2 INT_TIME           1D s   integration time",
+ "2 T3AMP             -1D -   triple product amplitude",
+ "2 T3AMPERR          -1D -   error in triple product amplitude",
+ "3 CORRINDX_T3AMP     1J -   index into correlation matrix for 1st T3AMP element",
+ "2 T3PHI             -1D deg triple product phase",
+ "2 T3PHIERR          -1D deg error in triple product phase",
+ "3 CORRINDX_T3PHI     1J -   index into correlation matrix for 1st T3PHI element",
+ "2 U1COORD            1D m   U coordinate of baseline AB of the triangle",
+ "2 V1COORD            1D m   V coordinate of baseline AB of the triangle",
+ "2 U2COORD            1D m   U coordinate of baseline BC of the triangle",
+ "2 V2COORD            1D m   V coordinate of baseline BC of the triangle",
+ "2 STA_INDEX          3I -   station numbers contributing to the data",
+ "2 FLAG              -1L -   flag"];
+
 /*-----------------------------------------*/
 /* OI_FLUX CLASS DEFINITION (1ST REVISION) */
 /*-----------------------------------------*/
@@ -2497,8 +2943,8 @@ _OIFITS_CLASSDEF_T3_1 = \
 _OIFITS_CLASSDEF_FLUX_1 = \
 ["0 OI_REVN            1I -        revision number of the table definition",
  "0 DATE-OBS           1A -        UTC start date of observations",
- "0 INSNAME            1A -        name of corresponding detector",
- "1 ARRNAME            1A -        name of corresponding array",
+ "0 INSNAME            1A -        name of corresponding OI_WAVELENGTH table",
+ "1 ARRNAME            1A -        name of corresponding OI_ARRAY table",
  "1 CORRNAME           1A -        name of corresponding OI_CORR table",
  "1 FOV                1D arcsec   area of sky over which flux is integrated",
  "1 FOVTYPE            1A -        model for FOV: 'FWHM' or 'RADIUS'",
@@ -2511,6 +2957,39 @@ _OIFITS_CLASSDEF_FLUX_1 = \
  "3 CORRINDX_FLUXDATA  1J -        index into correlation matrix for 1st FLUXDATA element",
  "3 STA_INDEX          1I -        station number contributing to the data",
  "2 FLAG              -1L -        flag"];
+
+/*-------------------------------------------*/
+/* OI_INSPOL CLASS DEFINITION (1ST REVISION) */
+/*-------------------------------------------*/
+
+_OIFITS_CLASSDEF_INSPOL_1 = \
+["0 OI_REVN            1I -        revision number of the table definition",
+ "0 DATE-OBS           1A -        UTC start date of observations",
+ "0 NPOL               1I -        number of polarisation types in this table",
+ "0 ARRNAME            1A -        name of corresponding OI_ARRAY table",
+ "0 ORIENT             1A -        orientation of the Jones matrix",
+ "0 MODEL              1A -        method for estimating the Jones matrix",
+ "2 TARGET_ID          1I -        target number as index into OI_TARGET table",
+ "2 INSNAME            1A -        name of corresponding OI_WAVELENGTH table",
+ "2 MJD_OBS            1D day      modified Julian Day, start of time lapse",
+ "2 MJD_END            1D day      modified Julian Day, end of time lapse",
+ "2 JXX               -1C -        complex Jones matrix component along X axis",
+ "2 JYY               -1C -        complex Jones matrix component along Y axis",
+ "2 JXY               -1C -        complex Jones matrix component between X and Y axis",
+ "2 JYX               -1C -        complex Jones matrix component between Y and X axis",
+ "3 STA_INDEX          1I -        station number for the Jones matrix"];
+
+/*-----------------------------------------*/
+/* OI_CORR CLASS DEFINITION (1ST REVISION) */
+/*-----------------------------------------*/
+
+_OIFITS_CLASSDEF_CORR_1 =                                             \
+["0 OI_REVN            1I -        revision number of the table definition",
+ "0 CORRNAME           1A -        name of correlated data set",
+ "0 NDATA              1I -        number of correlated data",
+ "2 IINDX              1J -        first index of correlation matrix element",
+ "2 JINDX              1J -        second index of correlation matrix element",
+ "2 CORR              -1D -        matrix element at (IINDX,JINDX)"];
 
 /*---------------------------------------------------------------------------*/
 /* INITIALIZATION OF OI-FITS TABLES AND CONSTANTS */
@@ -2534,6 +3013,7 @@ OIFITS_MICRON = 1e-6;
 
 local OIFITS_TYPE_TARGET, OIFITS_TYPE_WAVELENGTH, OIFITS_TYPE_ARRAY;
 local OIFITS_TYPE_VIS, OIFITS_TYPE_VIS2, OIFITS_TYPE_T3, OIFITS_TYPE_FLUX;
+local OIFITS_TYPE_INSPOL, OIFITS_TYPE_CORR;
 func oifits_get_type(db) { return db.__type; }
 /* DOCUMENT oifits_get_type(db)
      Returns OI-FITS type identifier for datablock DB, one of:
@@ -2550,6 +3030,8 @@ func oifits_get_type(db) { return db.__type; }
                                 triple products (bispectrum).
        OIFITS_TYPE_FLUX       - for an OI-FITS data block with measured
                                 target(s) spectrum.
+       OIFITS_TYPE_INSPOL     - for an OI-FITS instrumental polarisation.
+       OIFITS_TYPE_CORR       - for an OI-FITS correlation matrix.
 
    SEE ALSO: oifits_new. */
 
@@ -2589,14 +3071,15 @@ _OIFITS_CTYPE_LOGICAL = 1; /* for format letter 'L' */
 _OIFITS_CTYPE_INTEGER = 2; /* for format letters 'I' or 'J' */
 _OIFITS_CTYPE_REAL    = 3; /* for format letters 'D' or 'E' */
 _OIFITS_CTYPE_STRING  = 4; /* for format letter 'A' */
+_OIFITS_CTYPE_COMPLEX = 5; /* for format letter 'C' */
 
 local _OIFITS_REVN_MAX;
 local _OIFITS_REVN_DEFAULT;
 /* DOCUMENT _OIFITS_REVN_MAX      maximum OI-FITS revision number
             _OIFITS_REVN_DEFAULT  default OI-FITS revision number
    SEE ALSO: */
-_OIFITS_REVN_MAX = 1;
-_OIFITS_REVN_DEFAULT = 1;
+_OIFITS_REVN_MAX = 2;
+_OIFITS_REVN_DEFAULT = 2;
 
 /* Hash table for fast identification of OI-FITS data blocks. */
 local _OIFITS_DATABLOCK_CLASS;
@@ -2605,12 +3088,12 @@ func _oifits_init
 {
   extern OIFITS_TYPE_TARGET, OIFITS_TYPE_WAVELENGTH, OIFITS_TYPE_ARRAY;
   extern OIFITS_TYPE_VIS, OIFITS_TYPE_VIS2, OIFITS_TYPE_T3;
-  extern OIFITS_TYPE_FLUX;
+  extern OIFITS_TYPE_FLUX, OIFITS_TYPE_INSPOL, OIFITS_TYPE_CORR;
   extern _OIFITS_TYPE_TABLE, _OIFITS_CLASS_NAME_TABLE;
   extern _OIFITS_DATABLOCK_CLASS;
 
-  _OIFITS_DATABLOCK_CLASS = ["TARGET", "WAVELENGTH", "ARRAY",
-                             "VIS", "VIS2", "T3", "FLUX"];
+  _OIFITS_DATABLOCK_CLASS = ["TARGET", "WAVELENGTH", "ARRAY", "VIS", "VIS2",
+                             "T3", "FLUX", "INSPOL", "CORR"];
 
   _OIFITS_TYPE_TABLE = h_new();
   _OIFITS_CLASS_NAME_TABLE = array(string, numberof(_OIFITS_DATABLOCK_CLASS));
@@ -2642,7 +3125,9 @@ func _oifits_init
                       d=_OIFITS_CTYPE_REAL,
                       D=_OIFITS_CTYPE_REAL,
                       a=_OIFITS_CTYPE_STRING,
-                      A=_OIFITS_CTYPE_STRING); /* fast decoder for
+                      A=_OIFITS_CTYPE_STRING,
+                      c=_OIFITS_CTYPE_COMPLEX,
+                      C=_OIFITS_CTYPE_COMPLEX); /* fast decoder for
                                                   CTYPE letter */
   format = "%d %s %d%s %s %[^\n]"; /* to decode a single definition line */
   flags = long();
@@ -2655,6 +3140,9 @@ func _oifits_init
     for (type = numberof(_OIFITS_DATABLOCK_CLASS); type >= 1; --type) {
       class = _OIFITS_DATABLOCK_CLASS(type);
       tablename = _oifits_classdef_name(class, revn);
+      if (! symbol_exists(tablename)) {
+        continue;
+      }
       eq_nocopy, table, symbol_def(tablename);
       if (is_void(table)) continue;
       number = numberof(table);

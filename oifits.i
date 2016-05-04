@@ -349,8 +349,7 @@ func oifits_update(master, errmode=, revn=, force=)
                type == OIFITS_TYPE_VIS2 ||
                type == OIFITS_TYPE_T3 ||
                type == OIFITS_TYPE_FLUX);
-    h_set, db, revn=revn,
-      __self=key, __type=type, __class=class, __is_data=is_data;
+    h_set, db, __self=key, __type=type, __class=class, __is_data=is_data;
 
     /* Check INSNAME and build table of OI_WAVELENGTH datablocks. */
     if (is_data || type == OIFITS_TYPE_WAVELENGTH) {
@@ -787,7 +786,7 @@ func oifits_new_target(master,
   local _oifits_error_stack;
   _oifits_on_error = _oifits_on_error_stop;
   db = _oifits_datablock_builder(OIFITS_TYPE_TARGET,
-                                 h_new(revn = revn,
+                                 h_new(revn = (is_void(revn) ? 2 : revn),
                                        target_id = target_id,
                                        target = target,
                                        raep0 = raep0,
@@ -866,7 +865,7 @@ func oifits_new_array(master,
   local _oifits_error_stack;
   _oifits_on_error = _oifits_on_error_stop;
   db = _oifits_datablock_builder(OIFITS_TYPE_ARRAY,
-                                 h_new(revn = revn,
+                                 h_new(revn = (is_void(revn) ? 2 : revn),
                                        arrname = arrname,
                                        frame = frame,
                                        arrayx = arrayx,
@@ -921,7 +920,7 @@ func oifits_new_wavelength(master,
   local _oifits_error_stack;
   _oifits_on_error = _oifits_on_error_stop;
   db = _oifits_datablock_builder(OIFITS_TYPE_WAVELENGTH,
-                                 h_new(revn = revn,
+                                 h_new(revn = (is_void(revn) ? 2 : revn),
                                        insname = insname,
                                        eff_wave = eff_wave,
                                        eff_band = eff_band));
@@ -1019,7 +1018,7 @@ func oifits_new_vis(master,
   local _oifits_error_stack;
   _oifits_on_error = _oifits_on_error_stop;
   db = _oifits_datablock_builder(OIFITS_TYPE_VIS,
-                                 h_new(revn = revn,
+                                 h_new(revn = (is_void(revn) ? 2 : revn),
                                        date_obs = date_obs,
                                        arrname = arrname,
                                        insname = insname,
@@ -1116,7 +1115,7 @@ func oifits_new_vis2(master,
   local _oifits_error_stack;
   _oifits_on_error = _oifits_on_error_stop;
   db = _oifits_datablock_builder(OIFITS_TYPE_VIS2,
-                                 h_new(revn = revn,
+                                 h_new(revn = (is_void(revn) ? 2 : revn),
                                        date_obs = date_obs,
                                        arrname = arrname,
                                        insname = insname,
@@ -1209,7 +1208,7 @@ func oifits_new_t3(master,
   local _oifits_error_stack;
   _oifits_on_error = _oifits_on_error_stop;
   db = _oifits_datablock_builder(OIFITS_TYPE_T3,
-                                 h_new(revn = revn,
+                                 h_new(revn = (is_void(revn) ? 2 : revn),
                                        date_obs = date_obs,
                                        arrname = arrname,
                                        insname = insname,
@@ -1296,7 +1295,7 @@ func oifits_new_flux(master,
   local _oifits_error_stack;
   _oifits_on_error = _oifits_on_error_stop;
   db = _oifits_datablock_builder(OIFITS_TYPE_FLUX,
-                                 h_new(revn = revn,
+                                 h_new(revn = (is_void(revn) ? 1 : revn),
                                        date_obs = date_obs,
                                        insname = insname,
                                        arrname = arrname,
@@ -1376,7 +1375,7 @@ func oifits_new_inspol(master,
   local _oifits_error_stack;
   _oifits_on_error = _oifits_on_error_stop;
   db = _oifits_datablock_builder(OIFITS_TYPE_INSPOL,
-                                 h_new(revn = revn,
+                                 h_new(revn = (is_void(revn) ? 1 : revn),
                                        date_obs = date_obs,
                                        npol = npol,
                                        arrname = arrname,
@@ -1437,7 +1436,7 @@ func oifits_new_corr(master,
   local _oifits_error_stack;
   _oifits_on_error = _oifits_on_error_stop;
   db = _oifits_datablock_builder(OIFITS_TYPE_CORR,
-                                 h_new(revn = revn,
+                                 h_new(revn = (is_void(revn) ? 1 : revn),
                                        corrname = corrname,
                                        ndata = ndata,
                                        iindx = iindx,
@@ -1492,8 +1491,8 @@ func _oifits_datablock_builder(type, src, extname, hdu)
   } else {
     revn = h_get(src, "revn");
   }
-  if (_oifits_get_integer_scalar(revn, _OIFITS_REVN_DEFAULT)
-      || revn < 1 || revn > _OIFITS_REVN_MAX) {
+  if (_oifits_get_integer_scalar(revn) ||
+      revn < 1 || revn > _OIFITS_REVN_MAX) {
     _oifits_error, "unrecognized revision of the OI-FITS format";
     return;
   }
@@ -1505,6 +1504,9 @@ func _oifits_datablock_builder(type, src, extname, hdu)
     return;
   }
   class = _OIFITS_DATABLOCK_CLASS(type);
+  if (! symbol_exists(_oifits_classdef_name(class, revn))) {
+    error, swrite("invalid revision number for OI_%s", class);
+  }
   is_data = (type == OIFITS_TYPE_VIS ||
              type == OIFITS_TYPE_VIS2 ||
              type == OIFITS_TYPE_T3 ||
@@ -1868,7 +1870,6 @@ func oifits_save(master, filename, revn=, overwrite=,
   /* Assert consistency of MASTER. */
   if (! is_hash(master)) error, " expected hash table for first argument";
   oifits_update, master, errmode=1, revn=revn;
-  revn = master.__revn;
 
   /* Create new FITS file with empty primary HDU. */
   grow, comment, "FITS (Flexible Image Transport System) format defined in Astronomy and Astrophysics Supplement Series v44/p363, v44/p371, v73/p359, v73/p365", "Contact the NASA Science Office of Standards and Technology for the FITS Definition document #100 and other FITS information.", "Binary Extensions conform to OI-DATA standard for exchange of optical interferometry data currently described at http://www.mrao.cam.ac.uk/~jsy1001/exchange/.", "This file was created by Yeti/Yorick code from Centre de Recherche Astrophysique de Lyon (CRAL).";
@@ -1889,31 +1890,39 @@ func oifits_save(master, filename, revn=, overwrite=,
     fits_set, fh, "EXTNAME", extname;
 
     /* Write header description of the BINTABLE. */
+    revn = oifits_get_revn(master, db);
     eq_nocopy, table, _oifits_classdef_header(class, revn);
     n = numberof(table);
-    for (j=1 ; j<=n ; ++j) {
-      member = table(j).member;
-      if (! is_void(db(member))) {
-        fits_set, fh, table(j).keyword, db(member), table(j).comment;
+    for (j = 1; j <= n; ++j) {
+      entry = table(j);
+      eq_nocopy, value, h_get(db, entry.member);
+      if (is_void(value)) {
+        continue;
       }
+      fits_set, fh, entry.keyword, value, entry.comment;
     }
 
     /* Write column description of the BINTABLE. */
     eq_nocopy, table, _oifits_classdef_column(class, revn);
     n = numberof(table);
     ptr = array(pointer, n);
-    for (j=1 ; j<=n ; ++j) {
-      nth = swrite(format="%d", j);
-      member = table(j).member;
-      eq_nocopy, value, db(member);
-      ptr(j) = &value;
+    ncols = 0;
+    for (j = 1; j <= n; ++j) {
+      entry = table(j);
+      eq_nocopy, value, h_get(db, entry.member);
+      if (is_void(value)) {
+        continue;
+      }
+      ++ncols;
+      nth = swrite(format="%d", ncols);
+      ptr(ncols) = &value;
 
       /* TTYPE# */
-      fits_set, fh, "TTYPE"+nth, table(j).keyword, table(j).comment;
+      fits_set, fh, "TTYPE"+nth, entry.keyword, entry.comment;
 
       /* TFORM# */
-      multiplier = table(j).multiplier;
-      letter = table(j).letter;
+      multiplier = entry.multiplier;
+      letter = entry.letter;
       if (multiplier > 0) {
         ncells = multiplier;
       } else if (is_string(value)) {
@@ -1925,19 +1934,20 @@ func oifits_save(master, filename, revn=, overwrite=,
       fits_set, fh, "TFORM"+nth, swrite(format="%d%s", ncells, letter);
 
       /* TUNIT# */
-      units = db(member + "_units");
+      units = h_get(db, entry.member + "_units");
       if (! is_string(units) || ! is_scalar(units)) {
         if (! is_void(units)) {
           write, format="*** WARNING: bad units for '%s'", member;
         }
-        units = table(j).units;
+        units = entry.units;
       }
       if (strlen(units) && units != "-") {
         fits_set, fh, "TUNIT"+nth, units;
       }
     }
-
-    fits_write_bintable, fh, ptr;
+    if (ncols > 0) {
+      fits_write_bintable, fh, ptr(1:ncols);
+    }
   }
   fits_close, fh;
 }
@@ -3087,10 +3097,18 @@ func _oifits_classdef_name(class, revn)
   if (is_integer(class)) class = _OIFITS_CLASS_NAME_TABLE(class);
   return swrite(format=_OIFITS_CLASSDEF_FORMAT, class, revn);
 }
+func _oifits_classdef_spec(class, revn)
+{
+  name = _oifits_classdef_name(class, revn);
+  if (! symbol_exists(name)) {
+    error, "invalid data-block class or revision number";
+  }
+  return symbol_def(name);
+}
 func _oifits_classdef_header(class, revn)
-{ return *symbol_def(_oifits_classdef_name(class, revn))(1); }
+{ return *_oifits_classdef_spec(class, revn)(1); }
 func _oifits_classdef_column(class, revn)
-{ return *symbol_def(_oifits_classdef_name(class, revn))(2); }
+{ return *_oifits_classdef_spec(class, revn)(2); }
 /* DOCUMENT _oifits_classdef_name(class, revn)
        -or- _oifits_classdef_column(class, revn)
        -or- _oifits_classdef_header(class, revn)

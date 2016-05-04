@@ -155,7 +155,7 @@ func oifits_insert(master, ..)
       oifits_update, master;
       oifits_save, master, filename;
 
-   SEE ALSO: oifits_get_type, oifits_load, oifits_save, oifits_new
+   SEE ALSO: oifits_get_type, oifits_load, oifits_save, oifits_new,
              oifits_new_target, oifits_new_array, oifits_new_wavelength,
              oifits_new_vis, oifits_new_vis2, oifits_new_t3. */
 {
@@ -174,21 +174,7 @@ func oifits_insert(master, ..)
       error, ("invalid input data-block"
               + " (use one of the oifits_new_* constructors)");
     }
-    if (h_has(db, "__self")) {
-      /* Source data-block is already owned, make a private copy. */
-      cpy = h_new();
-      _oifits_copy_member, cpy, db, "__type";
-      _oifits_copy_member, cpy, db, "__class";
-      _oifits_copy_member, cpy, db, "__is_data";
-      _oifits_copy_member, cpy, db, "__nbaselines";
-      _oifits_copy_member, cpy, db, "__nwavelengths";
-      for (key = h_first(db); key; key = h_next(db, key)) {
-        if (strpart(key, 1:2) != "__") {
-          _oifits_copy_member, cpy, db, key;
-        }
-      }
-      db = cpy; /* this is a simple reference for non-array object */
-    }
+    db = oifits_unlink_datablock(db);
 
     /* Get name for new data block and insert in master. */
     do {
@@ -199,6 +185,34 @@ func oifits_insert(master, ..)
   }
 
   return master;
+}
+
+func oifits_unlink_datablock(db)
+/* DOCUMENT idb = oifits_unlink_datablock(db);
+     Make sure that OI-FITS data-block DB is not owned.  DB itself is returned
+     is it is not owned, otherwise a copy of DB contents is returned.
+
+   SEE ALSO: oifits_new_target.
+ */
+{
+  if (h_has(db, "__self")) {
+    /* Input data-block is owned, make a private copy. */
+    cpy = h_new();
+    _oifits_copy_member, cpy, db, "__type";
+    _oifits_copy_member, cpy, db, "__class";
+    _oifits_copy_member, cpy, db, "__is_data";
+    _oifits_copy_member, cpy, db, "__nbaselines";
+    _oifits_copy_member, cpy, db, "__nwavelengths";
+    for (key = h_first(db); key; key = h_next(db, key)) {
+      if (strpart(key, 1:2) != "__") {
+        _oifits_copy_member, cpy, db, key;
+      }
+    }
+    return cpy;
+  } else {
+    /* Input data-block is not owned, return a new reference to it. */
+    return db;
+  }
 }
 
 func oifits_update(master, errmode=, revn=, force=)
@@ -1009,6 +1023,11 @@ func oifits_new_vis(master,
                                        date_obs = date_obs,
                                        arrname = arrname,
                                        insname = insname,
+                                       corrname = corrname,
+                                       amptyp = amptyp,
+                                       phityp = phityp,
+                                       amporder = amporder,
+                                       phiorder = phiorder,
                                        target_id = target_id,
                                        time = time,
                                        mjd = mjd,
@@ -1927,22 +1946,42 @@ func oifits_save(master, filename, revn=, overwrite=,
 /*---------------------------------------------------------------------------*/
 /* ACCESSING CONTENTS OF OI-FITS OBJECTS */
 
-func oifits_first(master) { return master(master.__first); }
-func oifits_next(master, db)
-/* DOCUMENT oifits_first(master)
-       -or- oifits_next(master, db)
-     Get first or next datablock in OI-FITS handle MASTER.  Useful to run
+local oifits_first, oifits_last, oifits_next;
+/* DOCUMENT oifits_first(master);
+         or oifits_last(master);
+         or oifits_next(master, db);
+     Get first, last or next datablock in OI-FITS handle MASTER.  Useful to run
      across all datablocks.  For instance:
 
        for (db = oifits_first(master); db; db = oifits_next(master, db)) {
          ...;
        }
 
+    Beware that getting the last datablock involves travelling all the chain
+    of datablocks.
+
    SEE ALSO h_new, h_keys. */
+
+func oifits_first(master) { return h_get(master, master.__first); }
+
+func oifits_next(master, db)
 {
   if (! (is_void(db) || is_void((key = db.__next)))) {
-    return master(key);
+    return h_get(master, key);
   }
+}
+
+func oifits_last(master)
+{
+  db = oifits_first(master);
+  while (db) {
+    key = db.__next;
+    if (is_void(key)) break;
+    next = h_get(master, key);
+    if (is_void(next)) break;
+    db = next;
+  }
+  return db;
 }
 
 func oifits_is_data(db) { return db.__is_data; }

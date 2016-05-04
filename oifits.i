@@ -1002,7 +1002,6 @@ func oifits_new_vis(master,
                     sta_index=,
                     flag=)
 {
-  if (! is_void(visrefmap)) error, "FIXME: VISREFMAP not yet implemented";
   local _oifits_error_stack;
   _oifits_on_error = _oifits_on_error_stop;
   db = _oifits_datablock_builder(OIFITS_TYPE_VIS,
@@ -1614,17 +1613,10 @@ func _oifits_datablock_builder(type, src, extname, hdu)
 
     /* Check correctness of dimension list. */
     dims = dimsof(value);
-    ndims = dims(1);
-    if (ndims > 2) {
-      if (_oifits_error("too many dimensions for %s", what)) {
-        return;
-      } else {
-        continue;
-      }
-    }
-    nrows1 = (ndims >= 1 ? dims(2) : 1);
-    ncells = (ndims >= 2 ? dims(3) : 1);
-    if (nrows) {
+    rank = dims(1);
+    nrows1 = (rank >= 1 ? dims(2) : 1);
+    ncells = numberof(value)/nrows1;
+    if (nrows != 0) {
       if (nrows1 != nrows) {
         if (_oifits_error("bad number of rows for %s", what)) {
           return;
@@ -1636,23 +1628,26 @@ func _oifits_datablock_builder(type, src, extname, hdu)
       nrows = nrows1;
     }
     if (multiplier < 0) {
-      /* Number of cells is proportional to the number of spectral
-         channels. */
+      /* Each cell has abs(multiplier) dimensions each of length the number of
+         spectral channels. */
       multiplier = -multiplier;
-      if (! nwavelengths && ncells % multiplier == 0) {
-        nwavelengths = ncells/multiplier;
+      if (nwavelengths == 0) {
+        nwavelengths = lround(ncells^(1.0/multiplier));
       }
-      err = (ncells != multiplier*nwavelengths);
+      err = (rank != 1 + multiplier || anyof(dims(3:) != nwavelengths));
       if (err && keyword == "FLAG" && ncells == 1) {
         /* Hack for AMBER data ;-( */
         err = 0n;
-        value = value(.., -:1:multiplier*nwavelengths);
+        for (p = 1; p <= multiplier; ++p) {
+          value = value(.., -:1:nwavelengths);
+        }
       }
     } else {
-      err = (is_string(value) ? ncells != 1 : ncells != multiplier);
+      err = (rank > 2 || (is_string(value) ? ncells != 1
+                          : ncells != multiplier));
     }
     if (err) {
-      if (_oifits_error("bad number of cells for %s", what)) {
+      if (_oifits_error("bad cell dimensions for %s", what)) {
         return;
       } else {
         continue;
@@ -1904,7 +1899,7 @@ func oifits_save(master, filename, revn=, overwrite=,
         ncells = max(strlen(value));
       } else {
         dims = dimsof(value);
-        ncells = (dims(1) >= 2 ? dims(3) : 1);
+        ncells = (dims(1) >= 2 ? numberof(value)/dims(2) : 1);
       }
       fits_set, fh, "TFORM"+nth, swrite(format="%d%s", ncells, letter);
 
@@ -2675,11 +2670,13 @@ func _oifits_compare_tables(a, b)
  *
  *   where:
  *
- *     FLAGS = 1st bit: optional? 2bit: column (else header keyword)
+ *     FLAGS = 1st bit: optional value (else mandatory)
+ *             2nd bit: column (else header keyword)
  *     KEYWORD = keyword for HDU header or column name for table (TTYPE)
  *     FORMAT = nL where n is an integer and L a letter
  *         for the HDU header: n should be 1
- *         for the table: a negative number means abs(n)*NWAVE
+ *         for the table: a negative number means an array of rank equals to
+ *                        abs(n) with all dimensions equal to NWAVE
  *     UNITS = default units
  *     COMMENT = description
  */
@@ -2831,7 +2828,7 @@ _OIFITS_CLASSDEF_VIS_2 = \
  "2 VISPHI          -1D deg visibility phase",
  "2 VISPHIERR       -1D deg error in visibility phase",
  "3 CORRINDX_VISPHI  1J -   index into correlation matrix for 1st VISPHI element",
- "3 VISREFMAP       -1L -   matrix indicating, if true, which spectral channels were taken as reference for differential chromatic visibility computation",
+ "3 VISREFMAP       -2L -   matrix indicating, if true, which spectral channels were taken as reference for differential chromatic visibility computation",
  "3 RVIS            -1D -   real part of complex coherent flux",
  "3 RVISERR         -1D -   error on RVIS",
  "3 CORRINDX_RVIS    1J -   index into correlation matrix for 1st RVIS element",
@@ -3184,10 +3181,14 @@ func _oifits_init
                         j, tablename);
         }
         header(j) = in_header;
-        cdef(j) =_oifits_classdef(member=member, keyword=keyword,
-                                  letter=letter, units=units,
-                                  comment=comment, multiplier=multiplier,
-                                  ctype=ctype, optional = ((flags & 1) != 0));
+        cdef(j) =_oifits_classdef(member = member,
+                                  keyword = keyword,
+                                  letter = letter,
+                                  units = units,
+                                  comment = comment,
+                                  multiplier = multiplier,
+                                  ctype = ctype,
+                                  optional = ((flags & 1) != 0));
       }
       symbol_set, tablename, [&cdef(where(header)),
                               &cdef(where(! header))];

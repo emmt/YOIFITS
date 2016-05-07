@@ -684,7 +684,9 @@ func oifits_merge(.., quiet=)
           mjd = oifits_get_mjd(data, db),
           int_time = oifits_get_int_time(data, db),
           fluxdata = oifits_get_fluxdata(data, db),
+          fluxdata_units = oifits_get_fluxdata_units(data, db),
           fluxerr = oifits_get_fluxerr(data, db),
+          fluxerr_units = oifits_get_fluxerr_units(data, db),
           corrindx_fluxdata = oifits_get_corrindx_fluxdata(data, db),
           sta_index = oifits_get_sta_index(data, db),
           flag = oifits_get_flag(data, db);
@@ -1287,7 +1289,9 @@ func oifits_new_flux(master,
                      mjd=,
                      int_time=,
                      fluxdata=,
+                     fluxdata_units=,
                      fluxerr=,
+                     fluxerr_units=,
                      corrindx_fluxdata=,
                      sta_index=,
                      flag=)
@@ -1307,7 +1311,9 @@ func oifits_new_flux(master,
                                        mjd = mjd,
                                        int_time = int_time,
                                        fluxdata = fluxdata,
+                                       fluxdata_units = (is_void(fluxdata_units) ? "UNKNOWN" : fluxdata_units),
                                        fluxerr = fluxerr,
+                                       fluxerr_units = (is_void(fluxerr_units) ? "UNKNOWN" : fluxerr_units),
                                        corrindx_fluxdata = corrindx_fluxdata,
                                        sta_index = sta_index,
                                        flag = flag));
@@ -1596,8 +1602,6 @@ func _oifits_datablock_builder(type, src, extname, hdu)
     entry = table(j);
     member = entry.member;
     keyword = entry.keyword;
-    units = entry.units;
-    comment = entry.comment;
     multiplier = entry.multiplier;
     ctype = entry.ctype;
     optional = entry.optional;
@@ -1695,10 +1699,9 @@ func _oifits_datablock_builder(type, src, extname, hdu)
       given_units = h_get(src, member_units);
     }
     if (is_void(given_units)) {
-      given_units = units;
+      given_units = entry.units;
     }
-    if (structof(given_units) == string && strlen(given_units) &&
-        given_units != "-") {
+    if (structof(given_units) == string && given_units != "-") {
       h_set, db, member_units, given_units;
     } else {
       h_pop, db, member_units;
@@ -2000,7 +2003,7 @@ func oifits_is_data(db) { return db.__is_data; }
  * SEE ALSO: oifits_get_type.
  */
 
-local oifits_get_amporder, oifits_get_amptyp, oifits_get_arrayx, oifits_get_arrayy, oifits_get_arrayz, oifits_get_arrname, oifits_get_calstat, oifits_get_category, oifits_get_corr, oifits_get_corrindx_fluxdata, oifits_get_corrindx_ivis, oifits_get_corrindx_rvis, oifits_get_corrindx_t3amp, oifits_get_corrindx_t3phi, oifits_get_corrindx_vis2data, oifits_get_corrindx_visamp, oifits_get_corrindx_visphi, oifits_get_corrname, oifits_get_date_obs, oifits_get_dec_err, oifits_get_decep0, oifits_get_diameter, oifits_get_equinox, oifits_get_flag, oifits_get_fluxdata, oifits_get_fluxerr, oifits_get_fov, oifits_get_fovtype, oifits_get_frame, oifits_get_iindx, oifits_get_insname, oifits_get_int_time, oifits_get_ivis, oifits_get_iviserr, oifits_get_jindx, oifits_get_jxx, oifits_get_jxy, oifits_get_jyx, oifits_get_jyy, oifits_get_mjd, oifits_get_mjd_end, oifits_get_mjd_obs, oifits_get_model, oifits_get_ndata, oifits_get_npol, oifits_get_orient, oifits_get_para_err, oifits_get_parallax, oifits_get_phiorder, oifits_get_phityp, oifits_get_pmdec, oifits_get_pmdec_err, oifits_get_pmra, oifits_get_pmra_err, oifits_get_ra_err, oifits_get_raep0, oifits_get_revn, oifits_get_rvis, oifits_get_rviserr, oifits_get_spectyp, oifits_get_sta_index, oifits_get_sta_name, oifits_get_staxyz, oifits_get_sysvel, oifits_get_t3amp, oifits_get_t3amperr, oifits_get_t3phi, oifits_get_t3phierr, oifits_get_target, oifits_get_target_id, oifits_get_tel_name, oifits_get_time, oifits_get_u1coord, oifits_get_u2coord, oifits_get_ucoord, oifits_get_v1coord, oifits_get_v2coord, oifits_get_vcoord, oifits_get_veldef, oifits_get_veltyp, oifits_get_vis2data, oifits_get_vis2err, oifits_get_visamp, oifits_get_visamperr, oifits_get_visphi, oifits_get_visphierr, oifits_get_visrefmap;
+local oifits_get_amporder, oifits_get_amptyp, oifits_get_arrayx, oifits_get_arrayy, oifits_get_arrayz, oifits_get_arrname, oifits_get_calstat, oifits_get_category, oifits_get_corr, oifits_get_corrindx_fluxdata, oifits_get_corrindx_ivis, oifits_get_corrindx_rvis, oifits_get_corrindx_t3amp, oifits_get_corrindx_t3phi, oifits_get_corrindx_vis2data, oifits_get_corrindx_visamp, oifits_get_corrindx_visphi, oifits_get_corrname, oifits_get_date_obs, oifits_get_dec_err, oifits_get_decep0, oifits_get_diameter, oifits_get_equinox, oifits_get_flag, oifits_get_fluxdata, oifits_get_fluxdata_units, oifits_get_fluxerr, oifits_get_fluxerr_units, oifits_get_fov, oifits_get_fovtype, oifits_get_frame, oifits_get_iindx, oifits_get_insname, oifits_get_int_time, oifits_get_ivis, oifits_get_iviserr, oifits_get_jindx, oifits_get_jxx, oifits_get_jxy, oifits_get_jyx, oifits_get_jyy, oifits_get_mjd, oifits_get_mjd_end, oifits_get_mjd_obs, oifits_get_model, oifits_get_ndata, oifits_get_npol, oifits_get_orient, oifits_get_para_err, oifits_get_parallax, oifits_get_phiorder, oifits_get_phityp, oifits_get_pmdec, oifits_get_pmdec_err, oifits_get_pmra, oifits_get_pmra_err, oifits_get_ra_err, oifits_get_raep0, oifits_get_revn, oifits_get_rvis, oifits_get_rviserr, oifits_get_spectyp, oifits_get_sta_index, oifits_get_sta_name, oifits_get_staxyz, oifits_get_sysvel, oifits_get_t3amp, oifits_get_t3amperr, oifits_get_t3phi, oifits_get_t3phierr, oifits_get_target, oifits_get_target_id, oifits_get_tel_name, oifits_get_time, oifits_get_u1coord, oifits_get_u2coord, oifits_get_ucoord, oifits_get_v1coord, oifits_get_v2coord, oifits_get_vcoord, oifits_get_veldef, oifits_get_veltyp, oifits_get_vis2data, oifits_get_vis2err, oifits_get_visamp, oifits_get_visamperr, oifits_get_visphi, oifits_get_visphierr, oifits_get_visrefmap;
 local oifits_get_eff_wave, oifits_get_eff_band;
 /* DOCUMENT oifits_get_...(master, db);
 
@@ -2104,7 +2107,9 @@ func oifits_get_diameter(master, db)          { return db.diameter; }
 func oifits_get_equinox(master, db)           { return db.equinox; }
 func oifits_get_flag(master, db)              { return db.flag; }
 func oifits_get_fluxdata(master, db)          { return db.fluxdata; }
+func oifits_get_fluxdata_units(master, db)    { return db.fluxdata_units; }
 func oifits_get_fluxerr(master, db)           { return db.fluxerr; }
+func oifits_get_fluxerr_units(master, db)     { return db.fluxerr_units; }
 func oifits_get_fov(master, db)               { return db.fov; }
 func oifits_get_fovtype(master, db)           { return db.fovtype; }
 func oifits_get_frame(master, db)             { return db.frame; }

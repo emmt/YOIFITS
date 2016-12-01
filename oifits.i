@@ -1597,7 +1597,7 @@ func _oifits_datablock_builder(type, src, extname, hdu)
   nwavelengths = 0; /* number of spectral bandwidths */
   eq_nocopy, table, _oifits_classdef_column(class, revn);
   missing = array(int,  numberof(table));
-  for (j = 1 ; j <= numberof(table); ++j) { /* <=== BEWARE ORDER IS IMPORTANT!!! */
+  for (j = 1; j <= numberof(table); ++j) { // <=== BEWARE ORDER IS IMPORTANT!!!
     /* Parse table entry. */
     entry = table(j);
     member = entry.member;
@@ -1643,16 +1643,14 @@ func _oifits_datablock_builder(type, src, extname, hdu)
     rank = dims(1);
     nrows1 = (rank >= 1 ? dims(2) : 1);
     ncells = numberof(value)/nrows1;
-    if (nrows != 0) {
-      if (nrows1 != nrows) {
-        if (_oifits_error("bad number of rows for %s", what)) {
-          return;
-        } else {
-          continue;
-        }
-      }
-    } else {
+    if (nrows == 0) {
       nrows = nrows1;
+    } else if (nrows1 != nrows) {
+      if (_oifits_error("bad number of rows for %s", what)) {
+        return;
+      } else {
+        continue;
+      }
     }
     if (multiplier < 0) {
       /* Each cell has abs(multiplier) dimensions each of length the number of
@@ -1660,6 +1658,15 @@ func _oifits_datablock_builder(type, src, extname, hdu)
       multiplier = -multiplier;
       if (nwavelengths == 0) {
         nwavelengths = lround(ncells^(1.0/multiplier));
+      }
+      if (nwavelengths == 1) {
+        /* Apply Yorick rules for unit trailing dimensions and add them if
+           they are missing. */
+        while (rank < 1 + multiplier) {
+          value = value(.., -);
+          ++rank;
+        }
+        dims = dimsof(value);
       }
       err = (rank != 1 + multiplier || anyof(dims(3:) != nwavelengths));
       if (err && keyword == "FLAG" && ncells == 1) {

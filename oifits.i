@@ -66,10 +66,10 @@ if (! is_func(h_new)) include, "yeti.i", 1;
  *   db.__nbaselines   [integer] number of observed baselines
  *   db.__nwavelengths [integer] number of spectral channels
  *   db.__is_data  [integer] this data block contains measurements
- *   db.__ins      [string]  name ("__db#) of related OI_WAVELENGTH in master
- *   db.__arr      [string]  name ("__db#) of related OI_ARRAY in master
- *   db.__corr     [string]  name ("__db#) of related OI_CORR in master
- *   db.__self     [string]  name ("__db#) of this data block in its parent
+ *   db.__ins      [string]  name ("__db#') of related OI_WAVELENGTH in master
+ *   db.__arr      [string]  name ("__db#') of related OI_ARRAY in master
+ *   db.__corr     [string]  name ("__db#') of related OI_CORR in master
+ *   db.__self     [string]  name ("__db#') of this data block in its parent
  *   db.__index    [integer] index of this data block
  *   db.__type     [integer] data block type (see oifits_get_type)
  *   db.__next     [string]  name of next data block in same parent
@@ -2781,7 +2781,7 @@ func oifits_clone(obj, copy_array)
   if (is_hash(obj)) {
     clone = h_new();
     for (key = h_first(obj); key; key = h_next(obj, key)) {
-      h_set, clone, key, oifits_clone(obj(key), copy_array);
+      h_set, clone, key, oifits_clone(h_get(obj, key), copy_array);
     }
     return clone;
   }
@@ -2936,12 +2936,11 @@ func _oifits_compare_tables(a, b)
    SEE ALSO: oifits_merge.
  */
 {
-  alias = eq_nocopy;
   a_val = [];
   b_val = [];
   keys = h_keys(a);
-  n = numberof(keys);
-  for (i = 1; i<= n; ++i) {
+  nkeys = numberof(keys);
+  for (i = 1; i <= nkeys; ++i) {
     key = keys(i);
     if (strpart(key, 1:2) == "__") {
       continue;
@@ -2949,8 +2948,8 @@ func _oifits_compare_tables(a, b)
     if (! h_has(b, key)) {
       return swrite(format="missing key \"%s\"", key);
     }
-    alias, a_val, a(key);
-    alias, b_val, b(key);
+    eq_nocopy, a_val, a(key);
+    eq_nocopy, b_val, b(key);
     if (identof(a_val) != identof(b_val)) {
       return swrite(format="different types for key \"%s\"", key);
     }
@@ -2970,8 +2969,8 @@ func _oifits_compare_tables(a, b)
     }
   }
   keys = h_keys(b);
-  n = numberof(keys);
-  for (i = 1; i<= n; ++i) {
+  nkeys = numberof(keys);
+  for (i = 1; i <= nkeys; ++i) {
     key = keys(i);
     if (strpart(key, 1:2) != "__" && ! h_has(a, key)) {
       return swrite(format="missing key \"%s\"", key);

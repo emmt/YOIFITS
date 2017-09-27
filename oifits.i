@@ -103,11 +103,11 @@ if (! is_func(h_new)) include, "yeti.i", 1;
 /* Some constants. */
 local OIFITS_PI, OIFITS_MICRON, OIFITS_DEGREE, OIFITS_ARCSECOND;
 /* DOCUMENT OIFITS_PI             = 3.1415.....
- *     -or- OIFITS_MICRON         = micron to meter conversion factor
- *     -or- OIFITS_DEGREE         = degree to radian conversion factor
- *     -or- OIFITS_ARCSECOND      = arcsecond to radian conversion factor
- *
- * SEE ALSO: oifits_new.
+         or OIFITS_MICRON         = micron to meter conversion factor
+         or OIFITS_DEGREE         = degree to radian conversion factor
+         or OIFITS_ARCSECOND      = arcsecond to radian conversion factor
+
+   SEE ALSO: oifits_new.
  */
 OIFITS_PI = 3.141592653589793238462643383279503;
 OIFITS_DEGREE = OIFITS_PI/180.0;
@@ -134,7 +134,7 @@ func oifits_new(nil)
 
 func oifits_insert(master, ..)
 /* DOCUMENT oifits_insert, master, db1, db2, ...;
-       -or- oifits_insert(master, db1, db2, ...);
+         or oifits_insert(master, db1, db2, ...);
 
      Inserts new OI-FITS data-blocks DB1, DB2 etc into OI-FITS instance
      MASTER.  DBn are data-blocks as returned by one of the oifits_new_*
@@ -190,7 +190,7 @@ func oifits_insert(master, ..)
 func oifits_unlink_datablock(db)
 /* DOCUMENT idb = oifits_unlink_datablock(db);
      Make sure that OI-FITS data-block DB is not owned.  DB itself is returned
-     is it is not owned, otherwise a copy of DB contents is returned.
+     if it is not owned, otherwise a fresh copy of DB contents is returned.
 
    SEE ALSO: oifits_new_target.
  */
@@ -746,8 +746,8 @@ func oifits_new_target(master,
                        spectyp=,
                        category=)
 /* DOCUMENT db = oifits_new_target(key1 = value1, ...);
-       -or- db = oifits_new_target(master, key1 = value1, ...);
-       -or- oifits_new_target, master, key1 = value1, ...;
+         or db = oifits_new_target(master, key1 = value1, ...);
+         or oifits_new_target, master, key1 = value1, ...;
 
      Creates a new OI-FITS data-block of type OI_TARGET.  If MASTER is
      non-nil, it must be an existing OI-FITS master instance to store the new
@@ -831,8 +831,8 @@ func oifits_new_array(master,
                       fov=,
                       fovtype=)
 /* DOCUMENT db = oifits_new_array(key1 = value1, ...);
-       -or- db = oifits_new_array(master, key1 = value1, ...);
-       -or- oifits_new_array, master, key1 = value1, ...;
+         or db = oifits_new_array(master, key1 = value1, ...);
+         or oifits_new_array, master, key1 = value1, ...;
 
      Creates a new OI-FITS data-block of type OI_ARRAY (position of
      telescopes).  If MASTER is non-nil, it must be an existing OI-FITS master
@@ -895,8 +895,8 @@ func oifits_new_wavelength(master,
                            eff_wave=,
                            eff_band=)
 /* DOCUMENT db = oifits_new_array(key1 = value1, ...);
-       -or- db = oifits_new_array(master, key1 = value1, ...);
-       -or- oifits_new_array, master, key1 = value1, ...;
+         or db = oifits_new_array(master, key1 = value1, ...);
+         or oifits_new_array, master, key1 = value1, ...;
 
      Creates a new OI-FITS data-block of type OI_WAVELENGTH (spectral
      channels).  If MASTER is non-nil, it must be an existing OI-FITS
@@ -937,8 +937,8 @@ func oifits_new_wavelength(master,
 
 local oifits_new_vis;
 /* DOCUMENT db = oifits_new_vis(key1 = value1, ...);
-       -or- db = oifits_new_vis(master, key1 = value1, ...);
-       -or- oifits_new_vis, master, key1 = value1, ...;
+         or db = oifits_new_vis(master, key1 = value1, ...);
+         or oifits_new_vis, master, key1 = value1, ...;
 
      Creates a new OI-FITS data-block of type OI_VIS (complex visibility).  If
      MASTER is non-nil, it must be an existing OI-FITS master instance to
@@ -1061,8 +1061,8 @@ func oifits_new_vis(master,
 
 local oifits_new_vis2;
 /* DOCUMENT db = oifits_new_vis2(key1 = value1, ...);
-       -or- db = oifits_new_vis2(master, key1 = value1, ...);
-       -or- oifits_new_vis2, master, key1 = value1, ...;
+         or db = oifits_new_vis2(master, key1 = value1, ...);
+         or oifits_new_vis2, master, key1 = value1, ...;
 
      Creates a new OI-FITS data-block of type OI_VIS2 (squared visibility
      data).  If MASTER is non-nil, it must be an existing OI-FITS master
@@ -1144,8 +1144,8 @@ func oifits_new_vis2(master,
 
 local oifits_new_t3;
 /* DOCUMENT db = oifits_new_t3(key1 = value1, ...);
-       -or- db = oifits_new_t3(master, key1 = value1, ...);
-       -or- oifits_new_t3, master, key1 = value1, ...;
+         or db = oifits_new_t3(master, key1 = value1, ...);
+         or oifits_new_t3, master, key1 = value1, ...;
 
      Creates a new OI-FITS data-block of type OI_T3 (bispectrum or triple
      correlation data).  If MASTER is non-nil, it must be an existing OI-FITS
@@ -1242,8 +1242,8 @@ func oifits_new_t3(master,
 
 local oifits_new_flux;
 /* DOCUMENT db = oifits_new_flux(key1 = value1, ...);
-       -or- db = oifits_new_flux(master, key1 = value1, ...);
-       -or- oifits_new_flux, master, key1 = value1, ...;
+         or db = oifits_new_flux(master, key1 = value1, ...);
+         or oifits_new_flux, master, key1 = value1, ...;
 
      Creates a new OI-FITS data-block of type OI_FLUX (spectral energy
      distribution).  If MASTER is non-nil, it must be an existing OI-FITS
@@ -1328,8 +1328,8 @@ func oifits_new_flux(master,
 
 local oifits_new_inspol;
 /* DOCUMENT db = oifits_new_inspol(key1 = value1, ...);
-       -or- db = oifits_new_inspol(master, key1 = value1, ...);
-       -or- oifits_new_inspol, master, key1 = value1, ...;
+         or db = oifits_new_inspol(master, key1 = value1, ...);
+         or oifits_new_inspol, master, key1 = value1, ...;
 
      Creates a new OI-FITS data-block of type OI_INSPOL (beam polarization).
      If MASTER is non-nil, it must be an existing OI-FITS master instance to
@@ -1407,8 +1407,8 @@ func oifits_new_inspol(master,
 
 local oifits_new_corr;
 /* DOCUMENT db = oifits_new_corr(key1 = value1, ...);
-       -or- db = oifits_new_corr(master, key1 = value1, ...);
-       -or- oifits_new_corr, master, key1 = value1, ...;
+         or db = oifits_new_corr(master, key1 = value1, ...);
+         or oifits_new_corr, master, key1 = value1, ...;
 
      Creates a new OI-FITS data-block of type OI_CORR (correlations).
      If MASTER is non-nil, it must be an existing OI-FITS master instance to
@@ -1464,7 +1464,7 @@ func oifits_new_corr(master,
 
 func _oifits_datablock_builder(type, src, extname, hdu)
 /**DOCUMENT db = _oifits_datablock_builder(type, tbl);
-       -or- db = _oifits_datablock_builder(type, fh, extname, hdu);
+         or db = _oifits_datablock_builder(type, fh, extname, hdu);
 
      Returns an instanciated OI-FITS data-block with given TYPE (see
      oifits_get_type) and with contents taken from hash-table TBL or read from
@@ -2006,8 +2006,8 @@ func oifits_last(master)
 
 func oifits_is_data(db) { return db.__is_data; }
 /* DOCUMENT oifits_is_data(db)
- *   Return whether OI-FITS datablock DB contains data (VIS, VIS2 or T3).
- * SEE ALSO: oifits_get_type.
+     Return whether OI-FITS datablock DB contains data (VIS, VIS2 or T3).
+   SEE ALSO: oifits_get_type.
  */
 
 local oifits_get_amporder, oifits_get_amptyp, oifits_get_arrayx, oifits_get_arrayy, oifits_get_arrayz, oifits_get_arrname, oifits_get_calstat, oifits_get_category, oifits_get_corr, oifits_get_corrindx_fluxdata, oifits_get_corrindx_ivis, oifits_get_corrindx_rvis, oifits_get_corrindx_t3amp, oifits_get_corrindx_t3phi, oifits_get_corrindx_vis2data, oifits_get_corrindx_visamp, oifits_get_corrindx_visphi, oifits_get_corrname, oifits_get_date_obs, oifits_get_dec_err, oifits_get_decep0, oifits_get_diameter, oifits_get_equinox, oifits_get_flag, oifits_get_fluxdata, oifits_get_fluxdata_units, oifits_get_fluxerr, oifits_get_fluxerr_units, oifits_get_fov, oifits_get_fovtype, oifits_get_frame, oifits_get_iindx, oifits_get_insname, oifits_get_int_time, oifits_get_ivis, oifits_get_iviserr, oifits_get_jindx, oifits_get_jxx, oifits_get_jxy, oifits_get_jyx, oifits_get_jyy, oifits_get_mjd, oifits_get_mjd_end, oifits_get_mjd_obs, oifits_get_model, oifits_get_ndata, oifits_get_npol, oifits_get_orient, oifits_get_para_err, oifits_get_parallax, oifits_get_phiorder, oifits_get_phityp, oifits_get_pmdec, oifits_get_pmdec_err, oifits_get_pmra, oifits_get_pmra_err, oifits_get_ra_err, oifits_get_raep0, oifits_get_revn, oifits_get_rvis, oifits_get_rviserr, oifits_get_spectyp, oifits_get_sta_index, oifits_get_sta_name, oifits_get_staxyz, oifits_get_sysvel, oifits_get_t3amp, oifits_get_t3amperr, oifits_get_t3phi, oifits_get_t3phierr, oifits_get_target, oifits_get_target_id, oifits_get_tel_name, oifits_get_time, oifits_get_u1coord, oifits_get_u2coord, oifits_get_ucoord, oifits_get_v1coord, oifits_get_v2coord, oifits_get_vcoord, oifits_get_veldef, oifits_get_veltyp, oifits_get_vis2data, oifits_get_vis2err, oifits_get_visamp, oifits_get_visamperr, oifits_get_visphi, oifits_get_visphierr, oifits_get_visrefmap;
@@ -2343,9 +2343,9 @@ func oifits_get_error(master)
 
 func oifits_add_noise(master, method, level)
 /* DOCUMENT oifits_add_noise(master, method, level);
-       -or- oifits_add_noise, master, method, level;
-       -or- oifits_add_noise(master, method);
-       -or- oifits_add_noise, master, method;
+         or oifits_add_noise, master, method, level;
+         or oifits_add_noise(master, method);
+         or oifits_add_noise, master, method;
 
      Add noise to the measurements in MASTER.  The possible methods for that
      are:
@@ -2473,12 +2473,12 @@ func oifits_add_noise(master, method, level)
 
 func oifits_random_normal(a, b)
 /* DOCUMENT oifits_random_normal(stdev)
- *     -or- oifits_random_normal(mean, stdev)
- *   Return an array of pseudo random values folling Gaussian distribution
- *   centerd at MEAN (assumed to be zero in the first case) and standard
- *   deviation given by STDEV.
- *
- * SEE ALSO: random_n.
+         or oifits_random_normal(mean, stdev)
+     Return an array of pseudo random values folling Gaussian distribution
+     centerd at MEAN (assumed to be zero in the first case) and standard
+     deviation given by STDEV.
+
+   SEE ALSO: random_n.
  */
 {
   if (is_void(b)) {
@@ -2505,7 +2505,7 @@ func oifits_fix_name(s)
 
 func oifits_clone(obj, copy_array)
 /* DOCUMENT oifits_clone(obj)
-       -or- oifits_clone(obj, 0/1)
+         or oifits_clone(obj, 0/1)
      Returns a clone of object OBJ.  If second argument is true, array
      members found in OBJ are duplicated in its clone; otherwise, such
      members just get referenced in the clone.  The cloning is recursive.
@@ -2544,14 +2544,14 @@ local _oifits_get_real_vector, _oifits_get_real_array;
 local _oifits_get_string_scalar, _oifits_get_string_vector;
 local _oifits_get_string_array;
 /* DOCUMENT _oifits_get_integer_scalar(arg, def)
-       -or- _oifits_get_integer_vector(arg, def)
-       -or- _oifits_get_integer_array(arg, def)
-       -or- _oifits_get_real_scalar(arg, def)
-       -or- _oifits_get_real_vector(arg, def)
-       -or- _oifits_get_real_array(arg, def)
-       -or- _oifits_get_string_scalar(arg, def)
-       -or- _oifits_get_string_vector(arg, def)
-       -or- _oifits_get_string_array(arg, def)
+         or _oifits_get_integer_vector(arg, def)
+         or _oifits_get_integer_array(arg, def)
+         or _oifits_get_real_scalar(arg, def)
+         or _oifits_get_real_vector(arg, def)
+         or _oifits_get_real_array(arg, def)
+         or _oifits_get_string_scalar(arg, def)
+         or _oifits_get_string_vector(arg, def)
+         or _oifits_get_string_array(arg, def)
 
      These functions make ARG into a scalar, a vector or an array of given
      type (long for integer and double for real).  If ARG is nil, its value
@@ -2660,10 +2660,10 @@ func _oifits_get_real_array(&arg, def)
 
 func _oifits_copy_member(dst, src, key)
 /**DOCUMENT _oifits_copy_member, dst, src, key;
- *
- *   Copy value of member KEY from hash-table SRC into hash-table DST.
- *
- * SEE ALSO: h_get, h_set.
+
+     Copy value of member KEY from hash-table SRC into hash-table DST.
+
+   SEE ALSO: h_get, h_set.
  */
 {
   value = h_get(src, key); /* force a copy for array members */
@@ -3058,12 +3058,12 @@ _OIFITS_CLASSDEF_CORR_1 =                                             \
 local OIFITS_PI, OIFITS_MICRON;
 local OIFITS_DEGREE, OIFITS_ARCSECOND, OIFITS_MILLIARCSECOND;
 /* DOCUMENT OIFITS_PI             = 3.1415.....
- *     -or- OIFITS_MICRON         = micron to meter conversion factor
- *     -or- OIFITS_DEGREE         = degree to radian conversion factor
- *     -or- OIFITS_ARCSECOND      = arcsecond to radian conversion factor
- *     -or- OIFITS_MILLIARCSECOND = milliarcsecond to radian conversion factor
- *
- * SEE ALSO: oifits_get_type.
+         or OIFITS_MICRON         = micron to meter conversion factor
+         or OIFITS_DEGREE         = degree to radian conversion factor
+         or OIFITS_ARCSECOND      = arcsecond to radian conversion factor
+         or OIFITS_MILLIARCSECOND = milliarcsecond to radian conversion factor
+
+   SEE ALSO: oifits_get_type.
  */
 OIFITS_PI = 3.141592653589793238462643383279503;
 OIFITS_DEGREE = OIFITS_PI/180;
@@ -3122,8 +3122,8 @@ func _oifits_classdef_header(class, revn)
 func _oifits_classdef_column(class, revn)
 { return *_oifits_classdef_spec(class, revn)(2); }
 /* DOCUMENT _oifits_classdef_name(class, revn)
-       -or- _oifits_classdef_column(class, revn)
-       -or- _oifits_classdef_header(class, revn)
+         or _oifits_classdef_column(class, revn)
+         or _oifits_classdef_header(class, revn)
 
      _oifits_classdef_name returns the name of the global variable where
      is stored the class definition for CLASS datablock for revision number

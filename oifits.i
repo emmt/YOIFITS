@@ -122,7 +122,7 @@ func oifits_new(nil)
  */
 {
   if (! is_void(nil)) error, "expecting nil argument";
-  return h_new(__counter = 0, __clean = 1n);
+  return h_new(__counter = 0, __clean = 1n, __first = "");
 }
 
 /* steps:
@@ -501,19 +501,70 @@ func oifits_update(master, errmode=, revn=, force=)
   return master;
 }
 
-func oifits_merge(.., quiet=)
+func oifits_merge(.., quiet=, dest=)
 /* DOCUMENT data = oifits_merge(...);
-     Merge OIFITS files (given their names) or OI-DATA.  For now, only data
+     Merge OI-FITS files (given their names) or OI-DATA.  For now, only data
      with the same OI_TARGET and OI_ARRAY data blocks can be merged.
+
+     Keyword DEST can be specified with an existing OI-FITS instance into which
+     merge all inputs.  By default an empty destination is created.
 
    SEE ALSO: oifits_new, oifits_load, oifits_save.
  */
 {
-  alias = eq_nocopy;
-  master = oifits_new();
   target_db = [];
-  array_db = [];
-  instr_table = h_new();
+  arr_table = h_new();
+  ins_table = h_new();
+  corr_table = h_new();
+  inspol_table = h_new();
+  if (is_void(dest)) {
+    dest = oifits_new();
+  } else {
+    /* Register pre-existing entries that may be linked by data-blocks. */
+    for (db = oifits_first(dest); db; db = oifits_next(dest, db)) {
+      type = oifits_get_type(db);
+      if (type == OIFITS_TYPE_TARGET) {
+        if (is_void(target_db)) {
+          target_db = db;
+        } else {
+          error, "more than one OI_TARGET in destination";
+        }
+      } else if (type == OIFITS_TYPE_ARRAY) {
+        name = oifits_fix_name(oifits_get_arrname(dest, db));
+        if (h_has(arr_table, name)) {
+          error, ("more than one OI_ARRAY named \"" + name
+                  + "\" in destination");
+        } else {
+          h_set, arr_table, name, db;
+        }
+      } else if (type == OIFITS_TYPE_INSPOL) {
+        name = oifits_fix_name(oifits_get_arrname(dest, db));
+        if (h_has(inspol_table, name)) {
+          error, ("more than one OI_INSPOL named \"" + name
+                  + "\" in destination");
+        } else {
+          h_set, inspol_table, name, db;
+        }
+      } else if (type == OIFITS_TYPE_WAVELENGTH) {
+        name = oifits_fix_name(oifits_get_insname(dest, db));
+        if (h_has(ins_table, name)) {
+          error, ("more than one OI_WAVELENGTH named \"" + name
+                  + "\" in destination");
+        } else {
+          h_set, ins_table, name, db;
+        }
+      } else if (type == OIFITS_TYPE_CORR) {
+        name = oifits_fix_name(oifits_get_corrname(dest, db));
+        if (h_has(ins_table, name)) {
+          error, ("more than one OI_CORR named \"" + name
+                  + "\" in destination");
+        } else {
+          h_set, corr_table, name, db;
+        }
+      }
+    }
+  }
+
   nargs = 0;
   name_list = [];
   name_index = 1;
@@ -521,200 +572,91 @@ func oifits_merge(.., quiet=)
     /* Peek next argument of next file name in list. */
     if (name_index < numberof(name_list)) {
       filename = name_list(++name_index);
-      data = oifits_load(filename, quiet=quiet);
+      src = oifits_load(filename, quiet=quiet);
     } else if (more_args()) {
-      local data;
-      alias, data, next_arg();
+      local src;
+      eq_nocopy, src, next_arg();
       ++nargs;
-      if (is_string(data)) {
-        alias, name_list, data;
+      if (is_string(src)) {
+        eq_nocopy, name_list, src;
         name_index = 0;
         continue;
       }
       filename = swrite(format="ARG%d", nargs);
     } else {
-      return oifits_update(master);
+      return oifits_update(dest);
     }
-    for (db = oifits_first(data); db; db = oifits_next(data, db)) {
+    for (db = oifits_first(src); db; db = oifits_next(src, db)) {
       type = oifits_get_type(db);
-      if (type == OIFITS_TYPE_ARRAY) {
-        if (is_void(array_db)) {
-          array_db = oifits_new_array(master,
-                                      revn = oifits_get_revn(data, db),
-                                      arrname = oifits_get_arrname(data, db),
-                                      frame = oifits_get_frame(data, db),
-                                      arrayx = oifits_get_arrayx(data, db),
-                                      arrayy = oifits_get_arrayy(data, db),
-                                      arrayz = oifits_get_arrayz(data, db),
-                                      tel_name = oifits_get_tel_name(data, db),
-                                      sta_name = oifits_get_sta_name(data, db),
-                                      sta_index = oifits_get_sta_index(data, db),
-                                      diameter = oifits_get_diameter(data, db),
-                                      staxyz = oifits_get_staxyz(data, db),
-                                      fov = oifits_get_fov(data, db),
-                                      fovtype = oifits_get_fovtype(data, db));
-        } else {
-          msg = _oifits_compare_tables(array_db, db);
-          if (msg) {
-            error, swrite(format="cannot merge OI_ARRAY in \"%s\" (%s)", filename, msg);
-          }
-        }
-      } else if (type == OIFITS_TYPE_TARGET) {
+      if (type == OIFITS_TYPE_TARGET) {
         if (is_void(target_db)) {
-          target_db = oifits_new_target(master,
-                                        revn = oifits_get_revn(data, db),
-                                        target_id = oifits_get_target_id(data, db),
-                                        target = oifits_get_target(data, db),
-                                        raep0 = oifits_get_raep0(data, db),
-                                        decep0 = oifits_get_decep0(data, db),
-                                        equinox = oifits_get_equinox(data, db),
-                                        ra_err = oifits_get_ra_err(data, db),
-                                        dec_err = oifits_get_dec_err(data, db),
-                                        sysvel = oifits_get_sysvel(data, db),
-                                        veltyp = oifits_get_veltyp(data, db),
-                                        veldef = oifits_get_veldef(data, db),
-                                        pmra = oifits_get_pmra(data, db),
-                                        pmdec = oifits_get_pmdec(data, db),
-                                        pmra_err = oifits_get_pmra_err(data, db),
-                                        pmdec_err = oifits_get_pmdec_err(data, db),
-                                        parallax = oifits_get_parallax(data, db),
-                                        para_err = oifits_get_para_err(data, db),
-                                        spectyp = oifits_get_spectyp(data, db),
-                                        category = oifits_get_category(data, db));
+          target_db = oifits_unlink_datablock(db);
+          oifits_insert, dest, target_db;
         } else {
           msg = _oifits_compare_tables(target_db, db);
           if (msg) {
-            error, swrite(format="cannot merge OI_TARGET in \"%s\" (%s)", filename, msg);
+            error, swrite(format="cannot merge OI_TARGET from \"%s\" (%s)", filename, msg);
           }
         }
-      } else if (type == OIFITS_TYPE_WAVELENGTH) {
-        insname = oifits_get_insname(data, db);
-        if (! h_has(instr_table, insname)) {
-          h_set, instr_table, insname,
-            oifits_new_wavelength(master,
-                                  revn = oifits_get_revn(data, db),
-                                  insname = oifits_get_insname(data, db),
-                                  eff_wave = oifits_get_eff_wave(data, db),
-                                  eff_band = oifits_get_eff_band(data, db));
+      } else if (type == OIFITS_TYPE_ARRAY) {
+        name = oifits_fix_name(oifits_get_arrname(src, db));
+        if (h_has(arr_table, name)) {
+          msg = _oifits_compare_tables(h_get(arr_table, name), db);
+          if (msg) {
+            error, swrite(format="cannot merge OI_ARRAY \"%s\" from \"%s\" (%s)",
+                          name, filename, msg);
+          }
+        } else {
+          new_db = oifits_unlink_datablock(db);
+          h_set, new_db, arrname = name;
+          h_set, arr_table, name, new_db;
+          oifits_insert, dest, new_db;
         }
-      } else if (type == OIFITS_TYPE_VIS) {
-        oifits_new_vis, master,
-          revn = oifits_get_revn(data, db),
-          date_obs = oifits_get_date_obs(data, db),
-          arrname = oifits_get_arrname(data, db),
-          insname = oifits_get_insname(data, db),
-          corrname = oifits_get_corrname(data, db),
-          amptyp = oifits_get_amptyp(data, db),
-          phityp = oifits_get_phityp(data, db),
-          amporder = oifits_get_amporder(data, db),
-          phiorder = oifits_get_phiorder(data, db),
-          target_id = oifits_get_target_id(data, db),
-          time = oifits_get_time(data, db),
-          mjd = oifits_get_mjd(data, db),
-          int_time = oifits_get_int_time(data, db),
-          visamp = oifits_get_visamp(data, db),
-          visamperr = oifits_get_visamperr(data, db),
-          corrindx_visamp = oifits_get_corrindx_visamp(data, db),
-          visphi = oifits_get_visphi(data, db),
-          visphierr = oifits_get_visphierr(data, db),
-          corrindx_visphi = oifits_get_corrindx_visphi(data, db),
-          visrefmap = oifits_get_visrefmap(data, db),
-          rvis = oifits_get_rvis(data, db),
-          rviserr = oifits_get_rviserr(data, db),
-          corrindx_rvis = oifits_get_corrindx_rvis(data, db),
-          ivis = oifits_get_ivis(data, db),
-          iviserr = oifits_get_iviserr(data, db),
-          corrindx_ivis = oifits_get_corrindx_ivis(data, db),
-          ucoord = oifits_get_ucoord(data, db),
-          vcoord = oifits_get_vcoord(data, db),
-          sta_index = oifits_get_sta_index(data, db),
-          flag = oifits_get_flag(data, db);
-      } else if (type == OIFITS_TYPE_VIS2) {
-        oifits_new_vis2, master,
-          revn = oifits_get_revn(data, db),
-          date_obs = oifits_get_date_obs(data, db),
-          arrname = oifits_get_arrname(data, db),
-          insname = oifits_get_insname(data, db),
-          corrname = oifits_get_corrname(data, db),
-          target_id = oifits_get_target_id(data, db),
-          time = oifits_get_time(data, db),
-          mjd = oifits_get_mjd(data, db),
-          int_time = oifits_get_int_time(data, db),
-          vis2data = oifits_get_vis2data(data, db),
-          vis2err = oifits_get_vis2err(data, db),
-          corrindx_vis2data = oifits_get_corrindx_vis2data(data, db),
-          ucoord = oifits_get_ucoord(data, db),
-          vcoord = oifits_get_vcoord(data, db),
-          sta_index = oifits_get_sta_index(data, db),
-          flag = oifits_get_flag(data, db);
-      } else if (type == OIFITS_TYPE_T3) {
-        oifits_new_t3, master,
-          revn = oifits_get_revn(data, db),
-          date_obs = oifits_get_date_obs(data, db),
-          arrname = oifits_get_arrname(data, db),
-          insname = oifits_get_insname(data, db),
-          corrname = oifits_get_corrname(data, db),
-          target_id = oifits_get_target_id(data, db),
-          time = oifits_get_time(data, db),
-          mjd = oifits_get_mjd(data, db),
-          int_time = oifits_get_int_time(data, db),
-          t3amp = oifits_get_t3amp(data, db),
-          t3amperr = oifits_get_t3amperr(data, db),
-          corrindx_t3amp = oifits_get_corrindx_t3amp(data, db),
-          t3phi = oifits_get_t3phi(data, db),
-          t3phierr = oifits_get_t3phierr(data, db),
-          corrindx_t3phi = oifits_get_corrindx_t3phi(data, db),
-          u1coord = oifits_get_u1coord(data, db),
-          v1coord = oifits_get_v1coord(data, db),
-          u2coord = oifits_get_u2coord(data, db),
-          v2coord = oifits_get_v2coord(data, db),
-          sta_index = oifits_get_sta_index(data, db),
-          flag = oifits_get_flag(data, db);
-      } else if (type == OIFITS_TYPE_FLUX) {
-        oifits_new_flux, master,
-          revn = oifits_get_revn(data, db),
-          date_obs = oifits_get_date_obs(data, db),
-          insname = oifits_get_insname(data, db),
-          arrname = oifits_get_arrname(data, db),
-          corrname = oifits_get_corrname(data, db),
-          fov = oifits_get_fov(data, db),
-          fovtype = oifits_get_fovtype(data, db),
-          calstat = oifits_get_calstat(data, db),
-          target_id = oifits_get_target_id(data, db),
-          mjd = oifits_get_mjd(data, db),
-          int_time = oifits_get_int_time(data, db),
-          fluxdata = oifits_get_fluxdata(data, db),
-          fluxdata_units = oifits_get_fluxdata_units(data, db),
-          fluxerr = oifits_get_fluxerr(data, db),
-          fluxerr_units = oifits_get_fluxerr_units(data, db),
-          corrindx_fluxdata = oifits_get_corrindx_fluxdata(data, db),
-          sta_index = oifits_get_sta_index(data, db),
-          flag = oifits_get_flag(data, db);
       } else if (type == OIFITS_TYPE_INSPOL) {
-        oifits_new_inspol, master,
-          revn = oifits_get_revn(data, db),
-          date_obs = oifits_get_date_obs(data, db),
-          npol = oifits_get_npol(data, db),
-          arrname = oifits_get_arrname(data, db),
-          orient = oifits_get_orient(data, db),
-          model = oifits_get_model(data, db),
-          target_id = oifits_get_target_id(data, db),
-          insname = oifits_get_insname(data, db),
-          mjd_obs = oifits_get_mjd_obs(data, db),
-          mjd_end = oifits_get_mjd_end(data, db),
-          jxx = oifits_get_jxx(data, db),
-          jyy = oifits_get_jyy(data, db),
-          jxy = oifits_get_jxy(data, db),
-          jyx = oifits_get_jyx(data, db),
-          sta_index = oifits_get_sta_index(data, db);
+        name = oifits_fix_name(oifits_get_arrname(src, db));
+        if (h_has(inspol_table, name)) {
+          msg = _oifits_compare_tables(h_get(inspol_table, name), db);
+          if (msg) {
+            error, swrite(format="cannot merge OI_INSPOL \"%s\" from \"%s\" (%s)",
+                          name, filename, msg);
+          }
+        } else {
+          new_db = oifits_unlink_datablock(db);
+          h_set, new_db, arrname = name;
+          h_set, inspol_table, name, new_db;
+          oifits_insert, dest, new_db;
+        }
+      } else if (type == OIFITS_TYPE_WAVELENGTH) {
+        name = oifits_fix_name(oifits_get_insname(src, db));
+        if (h_has(ins_table, name)) {
+          msg = _oifits_compare_tables(h_get(ins_table, name), db);
+          if (msg) {
+            error, swrite(format="cannot merge OI_WAVELENGTH \"%s\" from \"%s\" (%s)",
+                          name, filename, msg);
+          }
+        } else {
+          new_db = oifits_unlink_datablock(db);
+          h_set, new_db, insname = name;
+          h_set, ins_table, name, new_db;
+          oifits_insert, dest, new_db;
+        }
       } else if (type == OIFITS_TYPE_CORR) {
-        oifits_new_flux, master,
-          revn = oifits_get_revn(data, db),
-          corrname = oifits_get_corrname(data, db),
-          ndata = oifits_get_ndata(data, db),
-          iindx = oifits_get_iindx(data, db),
-          jindx = oifits_get_jindx(data, db),
-          corr = oifits_get_corr(data, db);
+        name = oifits_fix_name(oifits_get_corrname(src, db));
+        if (h_has(corr_table, name)) {
+          msg = _oifits_compare_tables(h_get(corr_table, name), db);
+          if (msg) {
+            error, swrite(format="cannot merge OI_CORR \"%s\" from \"%s\" (%s)",
+                          name, filename, msg);
+          }
+        } else {
+          new_db = oifits_unlink_datablock(db);
+          h_set, new_db, corrname = name;
+          h_set, corr_table, name, new_db;
+          oifits_insert, dest, new_db;
+        }
+      } else if (type == OIFITS_TYPE_VIS || type == OIFITS_TYPE_VIS2 ||
+                 type == OIFITS_TYPE_T3 || type == OIFITS_TYPE_FLUX) {
+        oifits_insert, dest, db;
       }
     }
   }
@@ -2242,9 +2184,7 @@ func oifits_first(master) { return h_get(master, master.__first); }
 
 func oifits_next(master, db)
 {
-  if (! (is_void(db) || is_void((key = db.__next)))) {
-    return h_get(master, key);
-  }
+  return (is_void(db) || is_void((key = db.__next))) ? [] : h_get(master, key);
 }
 
 func oifits_last(master)

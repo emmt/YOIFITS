@@ -478,7 +478,7 @@ func oifits_update(master, errmode=, revn=, force=)
       h_pop, db, "__ins";
     }
     if (is_void(arr_lnk) && (db.__is_data || db.__type == OIFITS_TYPE_ARRAY)) {
-      write, format="WARNING: no ARRNAME for data block %d\n", db.__index;
+      oifits_warn, swrite(format="no ARRNAME for data block %d", db.__index);
     }
   }
 
@@ -1697,7 +1697,7 @@ func _oifits_datablock_builder(type, src, extname, hdu)
   }
   if (_oifits_get_integer_scalar(revn) ||
       revn < 1 || revn > _OIFITS_REVN_MAX) {
-    _oifits_error, "unrecognized revision of the OI-FITS format";
+    _oifits_error, "unrecognized or missing revision of the OI-FITS format";
     return;
   }
 
@@ -2145,7 +2145,7 @@ func oifits_save(master, filename, revn=, overwrite=,
       units = h_get(db, entry.member + "_units");
       if (! is_string(units) || ! is_scalar(units)) {
         if (! is_void(units)) {
-          write, format="*** WARNING: bad units for '%s'", member;
+          oifits_warn, swrite(format="bad units for '%s'", member);
         }
         units = entry.units;
       }
@@ -2414,7 +2414,6 @@ func _oifits_push(master, key, value)
    - usual behaviour: immediately report an error.
 */
 
-
 local _oifits_on_error;
 func _oifits_on_error_stop(message)
 {
@@ -2432,7 +2431,7 @@ func _oifits_on_error_push(message)
 
 func _oifits_on_error_warn(message)
 {
-  write, format="WARNING: %s\n", message;
+  oifits_warn, message;
   return 0;
 }
 
@@ -2513,6 +2512,16 @@ func _oifits_report_error
   error, message;
 }
 errs2caller, _oifits_report_error;
+
+func oifits_warn(msg)
+/* DOCUMENT oifits_warn, msg;
+     Print a warning message.
+
+   SEE ALSO: write, error.
+ */
+{
+  write, format="WARNING: %s\n", msg;
+}
 
 func oifits_clear_error(master)
 /* DOCUMENT msg = oifits_clear_error(master);

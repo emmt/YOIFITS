@@ -1695,6 +1695,13 @@ func _oifits_datablock_builder(type, src, extname, hdu)
   } else {
     revn = h_get(src, "revn");
   }
+  if (is_void(revn)) {
+    if (type == OIFITS_TYPE_FLUX) {
+      oifits_warn, "missing OI_REVN has been fixed in OI_FLUX";
+      revn = 1;
+      if (!reading) h_set, src, revn=revn;
+    }
+  }
   if (_oifits_get_integer_scalar(revn) ||
       revn < 1 || revn > _OIFITS_REVN_MAX) {
     _oifits_error, "unrecognized or missing revision of the OI-FITS format";

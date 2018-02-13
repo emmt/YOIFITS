@@ -7,7 +7,7 @@
  *-----------------------------------------------------------------------------
  *
  * Copyright (C) 2005 Éric Thiébaut, Clémentine Béchet, Julien Salmon.
- * Copyright (C) 2006-2016 Éric Thiébaut <eric.thiebaut@univ-lyon1.fr>
+ * Copyright (C) 2006-2018 Éric Thiébaut <eric.thiebaut@univ-lyon1.fr>
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -685,54 +685,63 @@ func oifits_select_target(src, pattern)
   dst = oifits_new();
   get_rows = _oifits_get_rows;
 
-  /* Search the numerical identifier of the target (stage = 0) and append all
-     datablocks (stage = 1). */
-  stage = 0;
+  /* First pass: Search the numerical identifier of the target. */
+  src_target_id = -1;
+  dst_target_id = 1;
   arrnames = h_new();
   insnames = h_new();
   corrnames = h_new();
   for (db = oifits_first(src); db; db = oifits_next(src, db)) {
     type = oifits_get_type(db);
-    if (type == OIFITS_TYPE_TARGET) {
-      if (stage != 0) {
-        error, "more than one OI_TARGET data-block in OI-FITS instance";
-      }
-      target = strtrim(oifits_get_target(src, db));
-      j = where(strglob(pattern, target, case=0, path=3, esc=0));
-      if (numberof(j) > 1) {
-        error, "too many matching targets";
-      }
-      if (numberof(j) == 0) {
+    if (type != OIFITS_TYPE_TARGET) {
+      continue;
+    }
+    if (src_target_id != -1) {
+      error, "more than one OI_TARGET data-block in OI-FITS instance";
+    }
+    target = strtrim(oifits_get_target(src, db));
+    j = where(strglob(pattern, target, case=0, path=3, esc=0));
+    n = numberof(j);
+    if (n != 1) {
+      if (n == 0) {
         break;
       }
-      j = j(1);
-      oifits_selected_target = target = target(j);
-      dst_target_id = 1;
-      src_target_id = oifits_get_target_id(src, db)(j);
-      oifits_new_target, dst,
-        revn = oifits_get_revn(src, db),
-        target_id = dst_target_id,
-        target = target,
-        raep0 = get_rows(oifits_get_raep0(src, db), j),
-        decep0 = get_rows(oifits_get_decep0(src, db), j),
-        equinox = get_rows(oifits_get_equinox(src, db), j),
-        ra_err = get_rows(oifits_get_ra_err(src, db), j),
-        dec_err = get_rows(oifits_get_dec_err(src, db), j),
-        sysvel = get_rows(oifits_get_sysvel(src, db), j),
-        veltyp = get_rows(oifits_get_veltyp(src, db), j),
-        veldef = get_rows(oifits_get_veldef(src, db), j),
-        pmra = get_rows(oifits_get_pmra(src, db), j),
-        pmdec = get_rows(oifits_get_pmdec(src, db), j),
-        pmra_err = get_rows(oifits_get_pmra_err(src, db), j),
-        pmdec_err = get_rows(oifits_get_pmdec_err(src, db), j),
-        parallax = get_rows(oifits_get_parallax(src, db), j),
-        para_err = get_rows(oifits_get_para_err(src, db), j),
-        spectyp = get_rows(oifits_get_spectyp(src, db), j),
-        category = get_rows(oifits_get_category(src, db), j);
-      stage = 1;
-      db =  oifits_first(src); // restart the loop
-    } else if (stage == 1 && (type == OIFITS_TYPE_VIS || type == OIFITS_TYPE_VIS2 ||
-                              type == OIFITS_TYPE_T3 || type == OIFITS_TYPE_FLUX)) {
+      error, "too many matching targets";
+    }
+    j = j(1);
+    oifits_selected_target = target = target(j);
+    src_target_id = oifits_get_target_id(src, db)(j);
+    oifits_new_target, dst,
+      revn = oifits_get_revn(src, db),
+      target_id = dst_target_id,
+      target = target,
+      raep0 = get_rows(oifits_get_raep0(src, db), j),
+      decep0 = get_rows(oifits_get_decep0(src, db), j),
+      equinox = get_rows(oifits_get_equinox(src, db), j),
+      ra_err = get_rows(oifits_get_ra_err(src, db), j),
+      dec_err = get_rows(oifits_get_dec_err(src, db), j),
+      sysvel = get_rows(oifits_get_sysvel(src, db), j),
+      veltyp = get_rows(oifits_get_veltyp(src, db), j),
+      veldef = get_rows(oifits_get_veldef(src, db), j),
+      pmra = get_rows(oifits_get_pmra(src, db), j),
+      pmdec = get_rows(oifits_get_pmdec(src, db), j),
+      pmra_err = get_rows(oifits_get_pmra_err(src, db), j),
+      pmdec_err = get_rows(oifits_get_pmdec_err(src, db), j),
+      parallax = get_rows(oifits_get_parallax(src, db), j),
+      para_err = get_rows(oifits_get_para_err(src, db), j),
+      spectyp = get_rows(oifits_get_spectyp(src, db), j),
+      category = get_rows(oifits_get_category(src, db), j);
+  }
+  if (src_target_id < 0) {
+    error, ("no OI_TARGET data-block in OI-FITS instance matching \""
+            + pattern + "\"");
+  }
+
+  /* Second pass: Append all relevant datablocks. */
+  for (db = oifits_first(src); db; db = oifits_next(src, db)) {
+    type = oifits_get_type(db);
+    if (type == OIFITS_TYPE_VIS || type == OIFITS_TYPE_VIS2 ||
+        type == OIFITS_TYPE_T3 || type == OIFITS_TYPE_FLUX) {
       j = where(oifits_get_target_id(src, db) == src_target_id);
       n = numberof(j);
       if (n < 1) continue;
@@ -840,61 +849,63 @@ func oifits_select_target(src, pattern)
       }
     }
   }
-  if (stage == 1) {
-    /* Deal with non-data entries. */
-    for (db = oifits_first(src); db; db = oifits_next(src, db)) {
-      type = oifits_get_type(db);
-      if (type == OIFITS_TYPE_WAVELENGTH &&
-          insnames(oifits_get_insname(src, db))) {
-        oifits_new_wavelength, dst,
-          revn = oifits_get_revn(src, db),
-          insname = oifits_get_insname(src, db),
-          eff_wave = oifits_get_eff_wave(src, db),
-          eff_band = oifits_get_eff_band(src, db);
-      } else if (type == OIFITS_TYPE_ARRAY &&
-                 arrnames(oifits_get_arrname(src, db))) {
-        oifits_new_array, dst,
-          revn = oifits_get_revn(src, db),
-          arrname = oifits_get_arrname(src, db),
-          frame = oifits_get_frame(src, db),
-          arrayx = oifits_get_arrayx(src, db),
-          arrayy = oifits_get_arrayy(src, db),
-          arrayz = oifits_get_arrayz(src, db),
-          tel_name = oifits_get_tel_name(src, db),
-          sta_name = oifits_get_sta_name(src, db),
-          sta_index = oifits_get_sta_index(src, db),
-          diameter = oifits_get_diameter(src, db),
-          staxyz = oifits_get_staxyz(src, db),
-          fov = oifits_get_fov(src, db),
-          fovtype = oifits_get_fovtype(src, db);
-      } else if (type == OIFITS_TYPE_INSPOL &&
-                 arrnames(oifits_get_arrname(src, db))) {
-        oifits_new_inspol, dst,
-          revn = oifits_get_revn(src, db),
-          date_obs = oifits_get_date_obs(src, db),
-          npol = oifits_get_npol(src, db),
-          arrname = oifits_get_arrname(src, db),
-          orient = oifits_get_orient(src, db),
-          model = oifits_get_model(src, db),
-          target_id = oifits_get_target_id(src, db),
-          insname = oifits_get_insname(src, db),
-          mjd_obs = oifits_get_mjd_obs(src, db),
-          mjd_end = oifits_get_mjd_end(src, db),
-          jxx = oifits_get_jxx(src, db),
-          jyy = oifits_get_jyy(src, db),
-          jxy = oifits_get_jxy(src, db),
-          jyx = oifits_get_jyx(src, db),
-          sta_index = oifits_get_sta_index(src, db);
-      } else if (type == OIFITS_TYPE_CORR &&
-                 corrnames(oifits_get_corrname(src, db))) {
-        oifits_new_flux, dst,
-          revn = oifits_get_revn(src, db),
-          corrname = oifits_get_corrname(src, db),
-          ndata = oifits_get_ndata(src, db),
-          iindx = oifits_get_iindx(src, db),
-          jindx = oifits_get_jindx(src, db),
-          corr = oifits_get_corr(src, db);
-      }
+
+  /* Third pass: Deal with non-data entries. */
+  for (db = oifits_first(src); db; db = oifits_next(src, db)) {
+    type = oifits_get_type(db);
+    if (type == OIFITS_TYPE_WAVELENGTH &&
+        insnames(oifits_get_insname(src, db))) {
+      oifits_new_wavelength, dst,
+        revn = oifits_get_revn(src, db),
+        insname = oifits_get_insname(src, db),
+        eff_wave = oifits_get_eff_wave(src, db),
+        eff_band = oifits_get_eff_band(src, db);
+    } else if (type == OIFITS_TYPE_ARRAY &&
+               arrnames(oifits_get_arrname(src, db))) {
+      oifits_new_array, dst,
+        revn = oifits_get_revn(src, db),
+        arrname = oifits_get_arrname(src, db),
+        frame = oifits_get_frame(src, db),
+        arrayx = oifits_get_arrayx(src, db),
+        arrayy = oifits_get_arrayy(src, db),
+        arrayz = oifits_get_arrayz(src, db),
+        tel_name = oifits_get_tel_name(src, db),
+        sta_name = oifits_get_sta_name(src, db),
+        sta_index = oifits_get_sta_index(src, db),
+        diameter = oifits_get_diameter(src, db),
+        staxyz = oifits_get_staxyz(src, db),
+        fov = oifits_get_fov(src, db),
+        fovtype = oifits_get_fovtype(src, db);
+    } else if (type == OIFITS_TYPE_INSPOL &&
+               arrnames(oifits_get_arrname(src, db))) {
+      j = where(oifits_get_target_id(src, db) == src_target_id);
+      n = numberof(j);
+      if (n < 1) continue;
+      oifits_new_inspol, dst,
+        revn = oifits_get_revn(src, db),
+        date_obs = oifits_get_date_obs(src, db),
+        npol = oifits_get_npol(src, db),
+        arrname = oifits_get_arrname(src, db),
+        orient = oifits_get_orient(src, db),
+        model = oifits_get_model(src, db),
+        target_id = array(dst_target_id, n),
+        insname = get_rows(oifits_get_insname(src, db), j),
+        mjd_obs = get_rows(oifits_get_mjd_obs(src, db), j),
+        mjd_end = get_rows(oifits_get_mjd_end(src, db), j),
+        jxx = get_rows(oifits_get_jxx(src, db), j),
+        jyy = get_rows(oifits_get_jyy(src, db), j),
+        jxy = get_rows(oifits_get_jxy(src, db), j),
+        jyx = get_rows(oifits_get_jyx(src, db), j),
+        sta_index = get_rows(oifits_get_sta_index(src, db), j);
+    } else if (type == OIFITS_TYPE_CORR &&
+               corrnames(oifits_get_corrname(src, db))) {
+      oifits_new_flux, dst,
+        revn = oifits_get_revn(src, db),
+        corrname = oifits_get_corrname(src, db),
+        ndata = oifits_get_ndata(src, db),
+        iindx = oifits_get_iindx(src, db),
+        jindx = oifits_get_jindx(src, db),
+        corr = oifits_get_corr(src, db);
     }
   }
 

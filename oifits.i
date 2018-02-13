@@ -113,6 +113,7 @@ OIFITS_PI = 3.141592653589793238462643383279503;
 OIFITS_DEGREE = OIFITS_PI/180.0;
 OIFITS_ARCSECOND = OIFITS_DEGREE/3600.0;
 OIFITS_MICRON = 1e-6;
+OIFITS_NANOMETER = 1e-9;
 
 func oifits_new(nil)
 /* DOCUMENT oifits_new()
@@ -673,8 +674,8 @@ func oifits_select_target(src, pattern)
      may be empty if the target is not found.  When called as a subroutine, the
      modification is done in-place; otherwise, a new instance is returned.
 
-     External variable `oifits_selected_target` can be used to determine the name
-     of the selected target.
+     External variable `oifits_selected_target` can be used to determine the
+     name of the selected target.
 
    SEE ALSO: oifits_new, oifits_load, oifits_save.
  */
@@ -2414,6 +2415,72 @@ func _oifits_get_link_member(master, db, link, key)
 func _oifits_push(master, key, value)
 {
   h_set, master, key, grow(h_pop(master, key), value);
+}
+
+func oifits_list_targets(master)
+/* DOCUMENT oifits_list_targets(master);
+         or oifits_list_targets, master;
+
+     When called as a function, yields a list of target names found in MiRA
+     instance `master`.  When called as a subroutine, print the numerical
+     identifier and the name of each target.
+
+   SEE ALSO: oifits_new, oifits_list_instruments, oifits_get_target,
+             oifits_get_target_id. */
+{
+  local result;
+  verbose = am_subroutine();
+  if (verbose) {
+    write, format="%s:\n", "Target(s)";
+  }
+  for (db = oifits_first(master); db; db = oifits_next(master, db)) {
+    type = oifits_get_type(db);
+    if (type != OIFITS_TYPE_TARGET) {
+      continue;
+    }
+    names = strtrim(oifits_get_target(master, db), 2);
+    if (verbose) {
+      ids = oifits_get_target_id(master, db);
+      write, format="  %3d: \"%s\"\n", ids, names;
+    } else {
+      grow, result, names;
+    }
+  }
+  return result;
+}
+
+func oifits_list_instruments(master)
+/* DOCUMENT oifits_list_instruments(master);
+         or oifits_list_instruments, master;
+
+     When called as a function, yields a list of instrument names found in MiRA
+     instance `master`.  When called as a subroutine, print the name and the
+     spectral range of each instrument.
+
+   SEE ALSO: oifits_new, oifits_list_targets, oifits_get_insname,
+             oifits_get_eff_wave. */
+{
+  local wave, result;
+  verbose = am_subroutine();
+  if (verbose) {
+    write, format="%s:\n", "Instrument(s)";
+  }
+  for (db = oifits_first(master); db; db = oifits_next(master, db)) {
+    type = oifits_get_type(db);
+    if (type != OIFITS_TYPE_WAVELENGTH) {
+      continue;
+    }
+    name = strtrim(oifits_get_insname(master, db), 2);
+    if (verbose) {
+      eq_nocopy, wave, oifits_get_eff_wave(master, db);
+      write, format="  \"%s\" (%.1fnm - %.1fnm)\n", name,
+        min(wave)/OIFITS_NANOMETER,
+        max(wave)/OIFITS_NANOMETER;
+    } else {
+      grow, result, name;
+    }
+  }
+  return result;
 }
 
 /*---------------------------------------------------------------------------*/

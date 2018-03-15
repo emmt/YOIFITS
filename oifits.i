@@ -502,7 +502,7 @@ func oifits_update(master, errmode=, revn=, force=)
   return master;
 }
 
-func oifits_merge(.., quiet=, dest=)
+func oifits_merge(.., quiet=, dest=, atol=, rtol=)
 /* DOCUMENT data = oifits_merge(...);
      Merge OI-FITS files (given their names) or OI-DATA.  For now, only data
      with the same OI_TARGET and OI_ARRAY data blocks can be merged.
@@ -510,7 +510,10 @@ func oifits_merge(.., quiet=, dest=)
      Keyword DEST can be specified with an existing OI-FITS instance into which
      merge all inputs.  By default an empty destination is created.
 
-   SEE ALSO: oifits_new, oifits_load, oifits_save.
+     Keywords ATOL and RTOL can be used to specify the absolute and relative
+     tolerances when comparing numerical values.
+
+   SEE ALSO: oifits_new, oifits_load, oifits_save, oifits_is_approx.
  */
 {
   target_db = [];
@@ -594,7 +597,7 @@ func oifits_merge(.., quiet=, dest=)
           target_db = oifits_unlink_datablock(db);
           oifits_insert, dest, target_db;
         } else {
-          msg = _oifits_compare_tables(target_db, db);
+          msg = _oifits_compare_tables(target_db, db, atol, rtol);
           if (msg) {
             error, swrite(format="cannot merge OI_TARGET from \"%s\" (%s)", filename, msg);
           }
@@ -602,7 +605,7 @@ func oifits_merge(.., quiet=, dest=)
       } else if (type == OIFITS_TYPE_ARRAY) {
         name = oifits_fix_name(oifits_get_arrname(src, db));
         if (h_has(arr_table, name)) {
-          msg = _oifits_compare_tables(h_get(arr_table, name), db);
+          msg = _oifits_compare_tables(h_get(arr_table, name), db, atol, rtol);
           if (msg) {
             error, swrite(format="cannot merge OI_ARRAY \"%s\" from \"%s\" (%s)",
                           name, filename, msg);
@@ -616,7 +619,8 @@ func oifits_merge(.., quiet=, dest=)
       } else if (type == OIFITS_TYPE_INSPOL) {
         name = oifits_fix_name(oifits_get_arrname(src, db));
         if (h_has(inspol_table, name)) {
-          msg = _oifits_compare_tables(h_get(inspol_table, name), db);
+          msg = _oifits_compare_tables(h_get(inspol_table, name), db,
+                                       atol, rtol);
           if (msg) {
             error, swrite(format="cannot merge OI_INSPOL \"%s\" from \"%s\" (%s)",
                           name, filename, msg);
@@ -630,7 +634,7 @@ func oifits_merge(.., quiet=, dest=)
       } else if (type == OIFITS_TYPE_WAVELENGTH) {
         name = oifits_fix_name(oifits_get_insname(src, db));
         if (h_has(ins_table, name)) {
-          msg = _oifits_compare_tables(h_get(ins_table, name), db);
+          msg = _oifits_compare_tables(h_get(ins_table, name), db, atol, rtol);
           if (msg) {
             error, swrite(format="cannot merge OI_WAVELENGTH \"%s\" from \"%s\" (%s)",
                           name, filename, msg);
@@ -644,7 +648,7 @@ func oifits_merge(.., quiet=, dest=)
       } else if (type == OIFITS_TYPE_CORR) {
         name = oifits_fix_name(oifits_get_corrname(src, db));
         if (h_has(corr_table, name)) {
-          msg = _oifits_compare_tables(h_get(corr_table, name), db);
+          msg = _oifits_compare_tables(h_get(corr_table, name), db, atol, rtol);
           if (msg) {
             error, swrite(format="cannot merge OI_CORR \"%s\" from \"%s\" (%s)",
                           name, filename, msg);
@@ -2825,6 +2829,31 @@ func oifits_clone(obj, copy_array)
   return obj;
 }
 
+func oifits_is_approx(x, y, atol, rtol)
+/* DOCUMENT oifits_is_approx(x, y, atol, rtol);
+
+     yields whether X and Y are approximately the same.  Argument ATOL and RTOL
+     specify absolute and relative tolerances.  If omitted they are assumed to
+     be zero which measn an exact approximation.
+
+   SEE ALSO: allof
+ */
+{
+  if (is_void(atol) || atol <= 0) {
+    if (is_void(rtol) || rtol <= 0) {
+      return allof(x == y);
+    } else {
+      return allof(abs(x - y) <= rtol*max(abs(x), abs(y)));
+    }
+  } else {
+    if (is_void(rtol) || rtol <= 0) {
+      return (max(abs(x - y)) <= atol);
+    } else {
+      return allof(abs(x - y) <= atol + rtol*max(abs(x), abs(y)));
+    }
+  }
+}
+
 /*---------------------------------------------------------------------------*/
 /* PARSING OF ARGUMENTS */
 
@@ -2960,14 +2989,17 @@ func _oifits_copy_member(dst, src, key)
   h_set, dst, key, value;
 }
 
-func _oifits_compare_tables(a, b)
-/** DOCUMENT _oifits_compare_tables(a, b);
+func _oifits_compare_tables(a, b, atol, rtol)
+/** DOCUMENT _oifits_compare_tables(a, b, atol, rtol);
 
       Compare contents of hash tables A and B.  Return nothing if A and B have
       the same contents or an error message if they differ.  Hash keys
       starting with "__" are ignored.
 
-   SEE ALSO: oifits_merge.
+      Keywords ATOL and RTOL can be used to specify the absolute and relative
+      tolerances when comparing numerical values.
+
+   SEE ALSO: oifits_merge, oifits_is_approx.
  */
 {
   a_val = [];
@@ -2984,7 +3016,7 @@ func _oifits_compare_tables(a, b)
     }
     eq_nocopy, a_val, a(key);
     eq_nocopy, b_val, b(key);
-    if (identof(a_val) != identof(b_val)) {
+    if ((id = identof(a_val)) != identof(b_val)) {
       return swrite(format="different types for key \"%s\"", key);
     }
     if (is_array(a_val)) {
@@ -2993,7 +3025,8 @@ func _oifits_compare_tables(a, b)
       if (numberof(a_dims) != numberof(b_dims) || anyof(a_dims != b_dims)) {
         return swrite(format="different dimensions for key \"%s\"", key);
       }
-      if (anyof(a_val != b_val)) {
+      if ((id > Y_DOUBLE ? anyof(a_val != b_val) :
+           ! oifits_is_approx(a_val, b_val, atol, rtol))) {
         return swrite(format="different value(s) for key \"%s\"", key);
       }
     } else {

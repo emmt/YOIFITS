@@ -841,9 +841,9 @@ func oifits_select_target(src, pattern)
           mjd = get_rows(oifits_get_mjd(src, db), j),
           int_time = get_rows(oifits_get_int_time(src, db), j),
           fluxdata = get_rows(oifits_get_fluxdata(src, db), j),
-          fluxdata_units = get_rows(oifits_get_fluxdata_units(src, db), j),
+          fluxdata_units = oifits_get_fluxdata_units(src, db),
           fluxerr = get_rows(oifits_get_fluxerr(src, db), j),
-          fluxerr_units = get_rows(oifits_get_fluxerr_units(src, db), j),
+          fluxerr_units = oifits_get_fluxerr_units(src, db),
           corrindx_fluxdata = get_rows(oifits_get_corrindx_fluxdata(src, db), j),
           sta_index = get_rows(oifits_get_sta_index(src, db), j),
           flag = get_rows(oifits_get_flag(src, db), j);

@@ -40,8 +40,10 @@ RM=rm -f
 
 # --------------------------------------------- standard targets and rules
 
-default:
-	@echo "nothing to do, type 'make install' to install"
+default: all
+
+all:
+	@echo "Nothing to do, execute 'make install' to install"
 
 install:
 	@if test -n "$(PKG_I)" -o -n "$(PKG_I_EXTRA)"; then \
@@ -122,6 +124,6 @@ $(RELEASE_NAME):
 	  fi; \
 	fi;
 
-.PHONY: clean release
+.PHONY: clean release all install uninstall default
 
 # -------------------------------------------------------- end of Makefile

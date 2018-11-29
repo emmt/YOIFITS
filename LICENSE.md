@@ -1,7 +1,8 @@
 The YOIFITS plug-in is licensed under the GNU-GPL License:
 
 > Copyright (C) 2005 Éric Thiébaut, Clémentine Béchet, Julien Salmon.
-> Copyright (C) 2006-2016 Éric Thiébaut <eric.thiebaut@univ-lyon1.fr>
+>
+> Copyright (C) 2006-2018 Éric Thiébaut <https://github.com/emmt/YOIFITS>
 >
 >
 >                     GNU GENERAL PUBLIC LICENSE

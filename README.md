@@ -3,23 +3,7 @@
 This project provides support for OI-FITS (optical interferometry data format) in
 [Yorick](http://yorick.github.com/).
 
-To use this software you must have Yorick (of course) and the
-[Yeti](https://github.com/emmt/Yeti) plugin installed.
-
-
-In short, building and installing the plug-in can be as quick as:
-```sh
-cd $BUILD_DIR
-$SRC_DIR/configure
-make
-make install
-```
-where `$BUILD_DIR` is the build directory (at your convenience) and
-`$SRC_DIR` is the source directory of the plug-in code.  The build and
-source directories can be the same in which case, call `./configure` to
-configure for building.
-
-More detailled informations are given below.
+[Installation](#installation) is explained below.
 
 
 ## Usage
@@ -255,20 +239,26 @@ oifits_add_noise, ws, method, level;
 ### Installation with EasyYorick
 
 Installation of YOIFITS by [EasyYorick](https://github.com/emmt/EasyYorick) is
-fully supported.  Assuming you have installed EasyYorick, you just hav to
+fully supported.  Assuming you have installed EasyYorick, you just have to
 execute:
 
 ```sh
-ypkg install yorick yoifits
+ypkg install yorick yeti yoifits
 ```
 
-which should install Yorick (if not yet installed) and YOIFITS.
+which should install Yorick, Yeti (if not yet installed) and YOIFITS.
+
+To upgrade to the last master version:
+
+```sh
+ypkg upgrade yoifits
+```
 
 
 ### Manual installation
 
-1. You must have [Yorick](http://yorick.github.com/) installed on
-   your machine.
+1. You must have [Yorick](http://yorick.github.com/) and
+   [Yeti](https://github.com/emmt/Yeti) installed on your machine.
 
 2. Unpack the [software code](https://github.com/emmt/YOIFITS/archive/master.zip)
    somewhere or clone the Git repository:
@@ -283,7 +273,8 @@ which should install Yorick (if not yet installed) and YOIFITS.
    git clone git@github.com:emmt/YOIFITS.git yoifits
    ```
 
-   if you want/prefer to use SSH.
+   if you want/prefer to use SSH.  Any of these commands creates a local GIT
+   repository named `yoifits`.
 
 
 3. Configure for compilation.  There are two possibilities (the first one is
@@ -326,7 +317,7 @@ which should install Yorick (if not yet installed) and YOIFITS.
    make
    ```
 
-5. Install the plug-in in Yorick directories:
+5. Install YOIFITS (you must have write access granted to Yorick directories):
 
    ```sh
    make install

@@ -1711,13 +1711,13 @@ func _oifits_datablock_builder(type, src, extname, hdu)
   } else {
     revn = h_get(src, "revn");
   }
-  //if (is_void(revn)) {
-  //  if (type == OIFITS_TYPE_FLUX) {
-  //    oifits_warn, "missing OI_REVN has been fixed in OI_FLUX";
-  //    revn = 1;
-  //    if (!reading) h_set, src, revn=revn;
-  //  }
-  //}
+  if (is_void(revn)) {
+    if (type == OIFITS_TYPE_FLUX) {
+      oifits_warn, "missing OI_REVN has been fixed in OI_FLUX";
+      revn = 1;
+      if (!reading) h_set, src, revn=revn;
+    }
+  }
   if (_oifits_get_integer_scalar(revn) ||
       revn < 1 || revn > _OIFITS_REVN_MAX) {
     _oifits_error, "unrecognized or missing revision of the OI-FITS format";
@@ -3296,82 +3296,82 @@ _OIFITS_CLASSDEF_T3_1 = \
 /*---------------------------------------*/
 
 _OIFITS_CLASSDEF_T3_2 = \
-["0 OI_REVN            1I -   revision number of the table definition",
- "0 DATE-OBS           1A -   UTC start date of observations",
- "0 ARRNAME            1A -   name of corresponding OI_ARRAY table",
- "0 INSNAME            1A -   name of corresponding OI_WAVELENGTH table",
- "1 CORRNAME           1A -   name of corresponding OI_CORR table",
- "2 TARGET_ID          1I -   target number as index into OI_TARGET table",
- "2 TIME               1D s   zero, for backward compatibility",
- "2 MJD                1D day modified Julian Day",
- "2 INT_TIME           1D s   integration time",
- "2 T3AMP             -1D -   triple product amplitude",
- "2 T3AMPERR          -1D -   error in triple product amplitude",
- "3 CORRINDX_T3AMP     1J -   index into correlation matrix for 1st T3AMP element",
- "2 T3PHI             -1D deg triple product phase",
- "2 T3PHIERR          -1D deg error in triple product phase",
- "3 CORRINDX_T3PHI     1J -   index into correlation matrix for 1st T3PHI element",
- "2 U1COORD            1D m   U coordinate of baseline AB of the triangle",
- "2 V1COORD            1D m   V coordinate of baseline AB of the triangle",
- "2 U2COORD            1D m   U coordinate of baseline BC of the triangle",
- "2 V2COORD            1D m   V coordinate of baseline BC of the triangle",
- "2 STA_INDEX          3I -   station numbers contributing to the data",
- "2 FLAG              -1L -   flag"];
+["0 OI_REVN         1I -   revision number of the table definition",
+ "0 DATE-OBS        1A -   UTC start date of observations",
+ "0 ARRNAME         1A -   name of corresponding OI_ARRAY table",
+ "0 INSNAME         1A -   name of corresponding OI_WAVELENGTH table",
+ "1 CORRNAME        1A -   name of corresponding OI_CORR table",
+ "2 TARGET_ID       1I -   target number as index into OI_TARGET table",
+ "2 TIME            1D s   zero, for backward compatibility",
+ "2 MJD             1D day modified Julian Day",
+ "2 INT_TIME        1D s   integration time",
+ "2 T3AMP          -1D -   triple product amplitude",
+ "2 T3AMPERR       -1D -   error in triple product amplitude",
+ "3 CORRINDX_T3AMP  1J -   index into correlation matrix for 1st T3AMP element",
+ "2 T3PHI          -1D deg triple product phase",
+ "2 T3PHIERR       -1D deg error in triple product phase",
+ "3 CORRINDX_T3PHI  1J -   index into correlation matrix for 1st T3PHI element",
+ "2 U1COORD         1D m   U coordinate of baseline AB of the triangle",
+ "2 V1COORD         1D m   V coordinate of baseline AB of the triangle",
+ "2 U2COORD         1D m   U coordinate of baseline BC of the triangle",
+ "2 V2COORD         1D m   V coordinate of baseline BC of the triangle",
+ "2 STA_INDEX       3I -   station numbers contributing to the data",
+ "2 FLAG           -1L -   flag"];
 
 /*-----------------------------------------*/
 /* OI_FLUX CLASS DEFINITION (1ST REVISION) */
 /*-----------------------------------------*/
 
 _OIFITS_CLASSDEF_FLUX_1 = \
-["0 OI_REVN            1I -        revision number of the table definition",
- "0 DATE-OBS           1A -        UTC start date of observations",
- "0 INSNAME            1A -        name of corresponding OI_WAVELENGTH table",
- "1 ARRNAME            1A -        name of corresponding OI_ARRAY table",
- "1 CORRNAME           1A -        name of corresponding OI_CORR table",
- "1 FOV                1D arcsec   area of sky over which flux is integrated",
- "1 FOVTYPE            1A -        model for FOV: 'FWHM' or 'RADIUS'",
- "0 CALSTAT            1A -        'C': spectrum is calibrated, 'U': uncalibrated",
- "2 TARGET_ID          1I -        target number as index into OI_TARGET table",
- "2 MJD                1D day      modified Julian Day",
- "2 INT_TIME           1D s        integration time",
- "2 FLUXDATA          -1D -        flux",
- "2 FLUXERR           -1D -        flux error",
- "3 CORRINDX_FLUXDATA  1J -        index into correlation matrix for 1st FLUXDATA element",
- "3 STA_INDEX          1I -        station number contributing to the data",
- "2 FLAG              -1L -        flag"];
+["0 OI_REVN            1I -      revision number of the table definition",
+ "0 DATE-OBS           1A -      UTC start date of observations",
+ "0 INSNAME            1A -      name of corresponding OI_WAVELENGTH table",
+ "1 ARRNAME            1A -      name of corresponding OI_ARRAY table",
+ "1 CORRNAME           1A -      name of corresponding OI_CORR table",
+ "1 FOV                1D arcsec area of sky over which flux is integrated",
+ "1 FOVTYPE            1A -      model for FOV: 'FWHM' or 'RADIUS'",
+ "0 CALSTAT            1A -      'C': spectrum is calibrated, 'U': uncalibrated",
+ "2 TARGET_ID          1I -      target number as index into OI_TARGET table",
+ "2 MJD                1D day    modified Julian Day",
+ "2 INT_TIME           1D s      integration time",
+ "2 FLUXDATA          -1D -      flux",
+ "2 FLUXERR           -1D -      flux error",
+ "3 CORRINDX_FLUXDATA  1J -      index into correlation matrix for 1st FLUXDATA element",
+ "3 STA_INDEX          1I -      station number contributing to the data",
+ "2 FLAG              -1L -      flag"];
 
 /*-------------------------------------------*/
 /* OI_INSPOL CLASS DEFINITION (1ST REVISION) */
 /*-------------------------------------------*/
 
 _OIFITS_CLASSDEF_INSPOL_1 = \
-["0 OI_REVN            1I -        revision number of the table definition",
- "0 DATE-OBS           1A -        UTC start date of observations",
- "0 NPOL               1I -        number of polarisation types in this table",
- "0 ARRNAME            1A -        name of corresponding OI_ARRAY table",
- "0 ORIENT             1A -        orientation of the Jones matrix",
- "0 MODEL              1A -        method for estimating the Jones matrix",
- "2 TARGET_ID          1I -        target number as index into OI_TARGET table",
- "2 INSNAME            1A -        name of corresponding OI_WAVELENGTH table",
- "2 MJD_OBS            1D day      modified Julian Day, start of time lapse",
- "2 MJD_END            1D day      modified Julian Day, end of time lapse",
- "2 JXX               -1C -        complex Jones matrix component along X axis",
- "2 JYY               -1C -        complex Jones matrix component along Y axis",
- "2 JXY               -1C -        complex Jones matrix component between X and Y axis",
- "2 JYX               -1C -        complex Jones matrix component between Y and X axis",
- "3 STA_INDEX          1I -        station number for the Jones matrix"];
+["0 OI_REVN    1I -   revision number of the table definition",
+ "0 DATE-OBS   1A -   UTC start date of observations",
+ "0 NPOL       1I -   number of polarisation types in this table",
+ "0 ARRNAME    1A -   name of corresponding OI_ARRAY table",
+ "0 ORIENT     1A -   orientation of the Jones matrix",
+ "0 MODEL      1A -   method for estimating the Jones matrix",
+ "2 TARGET_ID  1I -   target number as index into OI_TARGET table",
+ "2 INSNAME    1A -   name of corresponding OI_WAVELENGTH table",
+ "2 MJD_OBS    1D day modified Julian Day, start of time lapse",
+ "2 MJD_END    1D day modified Julian Day, end of time lapse",
+ "2 JXX       -1C -   complex Jones matrix component along X axis",
+ "2 JYY       -1C -   complex Jones matrix component along Y axis",
+ "2 JXY       -1C -   complex Jones matrix component between X and Y axis",
+ "2 JYX       -1C -   complex Jones matrix component between Y and X axis",
+ "3 STA_INDEX  1I -   station number for the Jones matrix"];
 
 /*-----------------------------------------*/
 /* OI_CORR CLASS DEFINITION (1ST REVISION) */
 /*-----------------------------------------*/
 
-_OIFITS_CLASSDEF_CORR_1 =                                             \
-["0 OI_REVN            1I -        revision number of the table definition",
- "0 CORRNAME           1A -        name of correlated data set",
- "0 NDATA              1I -        number of correlated data",
- "2 IINDX              1J -        first index of correlation matrix element",
- "2 JINDX              1J -        second index of correlation matrix element",
- "2 CORR              -1D -        matrix element at (IINDX,JINDX)"];
+_OIFITS_CLASSDEF_CORR_1 = \
+["0 OI_REVN   1I - revision number of the table definition",
+ "0 CORRNAME  1A - name of correlated data set",
+ "0 NDATA     1I - number of correlated data",
+ "2 IINDX     1J - first index of correlation matrix element",
+ "2 JINDX     1J - second index of correlation matrix element",
+ "2 CORR     -1D - matrix element at (IINDX,JINDX)"];
 
 /*---------------------------------------------------------------------------*/
 /* INITIALIZATION OF OI-FITS TABLES AND CONSTANTS */

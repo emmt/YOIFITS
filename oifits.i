@@ -216,13 +216,15 @@ func oifits_unlink_datablock(db)
   }
 }
 
-func oifits_update(master, errmode=, revn=, force=)
+func oifits_update(master, errmode=, revn=, force=, quiet=)
 /* DOCUMENT oifits_update(master)
 
      Update internals of OI-FITS main object MASTER and return it.
 
      If keyword ERRMODE is true, any inconsistency will be printed out and an
      error will be raised.  The default is ERRMODE=1.
+
+     If keyword QUIET is true, warning messages are suppressed.
 
      Keyword REVN can be set to the value of the new revision number of
      OI-FITS format.
@@ -478,7 +480,8 @@ func oifits_update(master, errmode=, revn=, force=)
       }
       h_pop, db, "__ins";
     }
-    if (is_void(arr_lnk) && (db.__is_data || db.__type == OIFITS_TYPE_ARRAY)) {
+    if (!quiet && is_void(arr_lnk) &&
+        (db.__is_data || db.__type == OIFITS_TYPE_ARRAY)) {
       oifits_warn, swrite(format="no ARRNAME for data block %d", db.__index);
     }
   }
@@ -588,7 +591,7 @@ func oifits_merge(.., quiet=, dest=, atol=, rtol=)
       }
       filename = swrite(format="ARG%d", nargs);
     } else {
-      return oifits_update(dest);
+      return oifits_update(dest, quiet=quiet);
     }
     for (db = oifits_first(src); db; db = oifits_next(src, db)) {
       type = oifits_get_type(db);
@@ -2079,7 +2082,7 @@ func oifits_load(filename, quiet=, errmode=)
   if (numberof(_oifits_error_stack)) {
     h_set, master, errmsg=_oifits_error_stack;
   }
-  return oifits_update(master, errmode=errmode);
+  return oifits_update(master, errmode=errmode, quiet=1n);
 }
 
 func oifits_save(master, filename, revn=, overwrite=,

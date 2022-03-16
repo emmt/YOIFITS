@@ -1,7 +1,7 @@
 # YOIFITS
 
 This project provides support for OI-FITS (optical interferometry data format) in
-[Yorick](http://yorick.github.com/).
+[Yorick](http://github.com/LLNL/yorick/).
 
 [Installation](#installation) is explained below.
 
@@ -257,7 +257,7 @@ ypkg upgrade yoifits
 
 ### Manual installation
 
-1. You must have [Yorick](http://yorick.github.com/) and
+1. You must have [Yorick](http://github.com/LLNL/yorick/) and
    [Yeti](https://github.com/emmt/Yeti) installed on your machine.
 
 2. Unpack the [software code](https://github.com/emmt/YOIFITS/archive/master.zip)

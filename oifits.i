@@ -336,7 +336,7 @@ func oifits_update(master, errmode=, revn=, force=, quiet=)
   for (key = master.__first; key; key = db.__next) {
     db = master(key);
 
-    /* Get OI-FITS type and instanciate class-specific datablock members. */
+    /* Get OI-FITS type and instantiate class-specific datablock members. */
     type = db.__type;
     if (is_integer(type) && is_scalar(type) &&
         1 <= type && type <= numberof(_OIFITS_DATABLOCK_CLASS)) {
@@ -486,7 +486,7 @@ func oifits_update(master, errmode=, revn=, force=, quiet=)
     }
   }
 
-  /* Instanciate members of MASTER. */
+  /* Instantiate members of MASTER. */
   h_set, master,
     __revn = revn,
     __array = array_list,
@@ -1724,12 +1724,12 @@ func _oifits_datablock_builder(type, src, extname, hdu)
 /**DOCUMENT db = _oifits_datablock_builder(type, tbl);
          or db = _oifits_datablock_builder(type, fh, extname, hdu);
 
-     Returns an instanciated OI-FITS data-block with given TYPE (see
+     Returns an instantiated OI-FITS data-block with given TYPE (see
      oifits_get_type) and with contents taken from hash-table TBL or read from
      OI-FITS file handle FH.  In the later case, EXTNAME and HDU are the FITS
      extension name and header-data unit number.
 
-     This private routine is intended to centralize most of the checkings to
+     This private routine is intended to centralize most of the checking to
      insure consistent definitions of OI-FITS data-blocks.
 
      In case of error, an empty result is returned.  However whether the
@@ -1801,7 +1801,7 @@ func _oifits_datablock_builder(type, src, extname, hdu)
   db = h_new(__class = class, __type = type, __is_data = is_data,
              revn = revn);
 
-  /* Instanciate data-block object from header part of HDU. */
+  /* Instantiate data-block object from header part of HDU. */
   local table, value; /* for parsing class definition tables */
   eq_nocopy, table, _oifits_classdef_header(class, revn);
   for (j = numberof(table); j >= 2 /* omit 1st line, i.e. OI_REVN */; --j) {
@@ -1856,7 +1856,7 @@ func _oifits_datablock_builder(type, src, extname, hdu)
     h_set, db, member, value;
   }
 
-  /* Instanciate data-block object from data (table) part of HDU. */
+  /* Instantiate data-block object from data (table) part of HDU. */
   local table, value; /* for parsing class definition tables */
   nrows = 0; /* we don't know yet the number of input rows */
   nwavelengths = 0; /* number of spectral bandwidths */
@@ -2242,7 +2242,7 @@ local oifits_first, oifits_last, oifits_next;
          ...;
        }
 
-    Beware that getting the last datablock involves travelling all the chain
+    Beware that getting the last datablock involves traveling all the chain
     of datablocks.
 
    SEE ALSO h_new, h_keys. */
@@ -2277,8 +2277,8 @@ local oifits_get_amporder, oifits_get_amptyp, oifits_get_arrayx, oifits_get_arra
 local oifits_get_eff_wave, oifits_get_eff_band;
 /* DOCUMENT oifits_get_...(master, db);
 
-     This functions query a given attribute of OI-FITS data block DB
-     in OI-FITS handle MASTER:
+     This functions query a given attribute of OI-FITS data block DB in OI-FITS
+     handle MASTER:
 
      oifits_get_date_obs  - get UTC start date of observations
      oifits_get_time      - get UTC time of observation (s)
@@ -2331,7 +2331,6 @@ local oifits_get_eff_wave, oifits_get_eff_band;
      oifits_get_staxyz    - get station coordinate relative to array center (m)
      oifits_get_fov       - get size of photometric field of view (arcsec)
      oifits_get_fovtype   - get model for FOV: "FWHM" or "RADIUS"
-
 
      Query attributes for OI_TARGET data block:
 
@@ -2561,7 +2560,7 @@ func oifits_list_instruments(master)
    error message and which calls _oifits_on_error to manage
    the error.  The result is returned to _oifits_datablock_builder,
    0 means continue (unless it is a fatal error), -1 means return
-   immediately.  In this way it is possible to customize the behaviour
+   immediately.  In this way it is possible to customize the behavior
    of _oifits_datablock_builder depending on the objectives:
 
    - reading a file mostly for testing: no error is considered as fatal,
@@ -2835,8 +2834,8 @@ func oifits_add_noise(master, method, level)
 func oifits_random_normal(a, b)
 /* DOCUMENT oifits_random_normal(stdev)
          or oifits_random_normal(mean, stdev)
-     Return an array of pseudo random values folling Gaussian distribution
-     centerd at MEAN (assumed to be zero in the first case) and standard
+     Return an array of pseudo random values following Gaussian distribution
+     centered at MEAN (assumed to be zero in the first case) and standard
      deviation given by STDEV.
 
    SEE ALSO: random_n.
@@ -2901,7 +2900,7 @@ func oifits_is_approx(x, y, atol, rtol)
 
      yields whether X and Y are approximately the same.  Argument ATOL and RTOL
      specify absolute and relative tolerances.  If omitted they are assumed to
-     be zero which measn an exact approximation.
+     be zero which means an exact approximation.
 
    SEE ALSO: allof
  */
@@ -3499,7 +3498,7 @@ func oifits_get_type(db) { return db.__type; }
                                 triple products (bispectrum).
        OIFITS_TYPE_FLUX       - for an OI-FITS data block with measured
                                 target(s) spectrum.
-       OIFITS_TYPE_INSPOL     - for an OI-FITS instrumental polarisation.
+       OIFITS_TYPE_INSPOL     - for an OI-FITS instrumental polarization.
        OIFITS_TYPE_CORR       - for an OI-FITS correlation matrix.
 
    SEE ALSO: oifits_new. */

@@ -25,6 +25,8 @@
  *-----------------------------------------------------------------------------
  */
 
+OIFITS_VERSION = "1.1.0";
+
 /* OI-FITS is based on fits.i */
 if (! is_func(fits_open)) include, "fits.i", 1;
 

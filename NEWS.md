@@ -6,7 +6,7 @@ OI-FITS data format.
 This file structure is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec).
 
-## Unreleased
+## Version 1.1.0 (2025-04-06)
 
 ### Changed
 

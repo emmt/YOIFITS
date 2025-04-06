@@ -792,7 +792,11 @@ func oifits_select_target(src, pattern)
           ucoord = get_rows(oifits_get_ucoord(src, db), j),
           vcoord = get_rows(oifits_get_vcoord(src, db), j),
           sta_index = get_rows(oifits_get_sta_index(src, db), j),
-          flag = get_rows(oifits_get_flag(src, db), j);
+          flag = get_rows(oifits_get_flag(src, db), j),
+          model_visamp = get_rows(oifits_get_model_visamp(src, db), j),
+          model_visamperr = get_rows(oifits_get_model_visamperr(src, db), j),
+          model_visphi = get_rows(oifits_get_model_visphi(src, db), j),
+          model_visphierr = get_rows(oifits_get_model_visphierr(src, db), j);
       } else if (type == OIFITS_TYPE_VIS2) {
         oifits_new_vis2, dst,
           revn = oifits_get_revn(src, db),
@@ -810,7 +814,9 @@ func oifits_select_target(src, pattern)
           ucoord = get_rows(oifits_get_ucoord(src, db), j),
           vcoord = get_rows(oifits_get_vcoord(src, db), j),
           sta_index = get_rows(oifits_get_sta_index(src, db), j),
-          flag = get_rows(oifits_get_flag(src, db), j);
+          flag = get_rows(oifits_get_flag(src, db), j),
+          model_vis2data = get_rows(oifits_get_model_vis2data(src, db), j),
+          model_vis2err = get_rows(oifits_get_model_vis2err(src, db), j);
       } else if (type == OIFITS_TYPE_T3) {
         oifits_new_t3, dst,
           revn = oifits_get_revn(src, db),
@@ -833,7 +839,11 @@ func oifits_select_target(src, pattern)
           u2coord = get_rows(oifits_get_u2coord(src, db), j),
           v2coord = get_rows(oifits_get_v2coord(src, db), j),
           sta_index = get_rows(oifits_get_sta_index(src, db), j),
-          flag = get_rows(oifits_get_flag(src, db), j);
+          flag = get_rows(oifits_get_flag(src, db), j),
+          model_t3amp = get_rows(oifits_get_model_t3amp(src, db), j),
+          model_t3amperr = get_rows(oifits_get_model_t3amperr(src, db), j),
+          model_t3phi = get_rows(oifits_get_model_t3phi(src, db), j),
+          model_t3phierr = get_rows(oifits_get_model_t3phierr(src, db), j);
       } else if (type == OIFITS_TYPE_FLUX) {
         oifits_new_flux, dst,
           revn = oifits_get_revn(src, db),
@@ -1197,6 +1207,11 @@ local oifits_new_vis;
      vcoord          m    V coordinate of the data
      sta_index            station numbers contributing to the data
      flag                 flag
+     model_visamp         model of VISAMP
+     model_visamperr      model of VISAMPERR
+     model_visphi    deg  model of VISPHI
+     model_visphierr deg  model of VISPHIERR
+
      --------------------------------------------------------------------------
 
    SEE ALSO: oifits_insert, oifits_get, oifits_new, oifits_new_array,
@@ -1232,7 +1247,11 @@ func oifits_new_vis(master,
                     ucoord=,
                     vcoord=,
                     sta_index=,
-                    flag=)
+                    flag=,
+                    model_visamp=,
+                    model_visamperr=,
+                    model_visphi=,
+                    model_visphierr=)
 {
   local _oifits_error_stack;
   _oifits_on_error = _oifits_on_error_stop;
@@ -1266,7 +1285,11 @@ func oifits_new_vis(master,
                                        ucoord = ucoord,
                                        vcoord = vcoord,
                                        sta_index = sta_index,
-                                       flag = flag));
+                                       flag = flag,
+                                       model_visamp = model_visamp,
+                                       model_visamperr = model_visamperr,
+                                       model_visphi = model_visphi,
+                                       model_visphierr = model_visphierr));
   if (numberof(_oifits_error_stack)) {
     _oifits_report_error;
   }
@@ -1308,6 +1331,8 @@ local oifits_new_vis2;
      vcoord             m    V coordinate of the data
      sta_index               station numbers contributing to the data
      flag                    flag
+     model_vis2data          model of VIS2DATA
+     model_vis2err           model of VIS2ERR
      --------------------------------------------------------------------------
 
    SEE ALSO: oifits_insert, oifits_get, oifits_new, oifits_new_array,
@@ -1329,7 +1354,9 @@ func oifits_new_vis2(master,
                      ucoord=,
                      vcoord=,
                      sta_index=,
-                     flag=)
+                     flag=,
+                     model_vis2data=,
+                     model_vis2err=)
 {
   local _oifits_error_stack;
   _oifits_on_error = _oifits_on_error_stop;
@@ -1349,7 +1376,9 @@ func oifits_new_vis2(master,
                                        ucoord = ucoord,
                                        vcoord = vcoord,
                                        sta_index = sta_index,
-                                       flag = flag));
+                                       flag = flag,
+                                       model_vis2data = model_vis2data,
+                                       model_vis2err = model_vis2err));
   if (numberof(_oifits_error_stack)) {
     _oifits_report_error;
   }
@@ -1396,6 +1425,10 @@ local oifits_new_t3;
      v2coord         m    V coordinate of baseline BC of the triangle
      sta_index            station numbers contributing to the data
      flag                 flag
+     model_t3amp          model of T3AMP
+     model_t3amperr       model of T3AMPERR
+     model_t3phi     deg  model of T3PHI
+     model_t3phierr  deg  model of T3PHIERR
      ------------------------------------------------------------------------
 
    SEE ALSO: oifits_insert, oifits_get, oifits_new, oifits_new_array,
@@ -1422,7 +1455,11 @@ func oifits_new_t3(master,
                    u2coord=,
                    v2coord=,
                    sta_index=,
-                   flag=)
+                   flag=,
+                   model_t3amp=,
+                   model_t3amperr=,
+                   model_t3phi=,
+                   model_t3phierr=)
 {
   local _oifits_error_stack;
   _oifits_on_error = _oifits_on_error_stop;
@@ -1447,7 +1484,11 @@ func oifits_new_t3(master,
                                        u2coord = u2coord,
                                        v2coord = v2coord,
                                        sta_index = sta_index,
-                                       flag = flag));
+                                       flag = flag,
+                                       model_t3amp = model_t3amp,
+                                       model_t3amperr = model_t3amperr,
+                                       model_t3phi = model_t3phi,
+                                       model_t3phierr = model_t3phierr));
   if (numberof(_oifits_error_stack)) {
     _oifits_report_error;
   }
@@ -2262,6 +2303,18 @@ local oifits_get_eff_wave, oifits_get_eff_band;
      oifits_get_u2coord   - get u coordinate of baseline BC of the triangle (m)
      oifits_get_v2coord   - get v coordinate of baseline BC of the triangle (m)
 
+     Query optional model of the data:
+
+     oifits_get_model_visamp    - get model of visibility amplitude
+     oifits_get_model_visamperr - get model of error in visibility amplitude
+     oifits_get_model_visphi    - get model of visibility phase (deg)
+     oifits_get_model_visphierr - get model of error in visibility phase (deg)
+     oifits_get_model_vis2data  - get model of squared visibility
+     oifits_get_model_vis2err   - get model of error in squared visibility
+     oifits_get_model_t3amp     - get model of triple-product amplitude
+     oifits_get_model_t3amperr  - get model of error in triple product amplitude
+     oifits_get_model_t3phi     - get model of triple-product phase (deg)
+     oifits_get_model_t3phierr  - get model of error in triple product phase (deg)
 
      Query attributes for OI_ARRAY data block:
 
@@ -2400,6 +2453,17 @@ func oifits_get_visamperr(master, db)         { return db.visamperr; }
 func oifits_get_visphi(master, db)            { return db.visphi; }
 func oifits_get_visphierr(master, db)         { return db.visphierr; }
 func oifits_get_visrefmap(master, db)         { return db.visrefmap; }
+
+func oifits_get_model_t3amp(master, db)       { return db.model_t3amp; }
+func oifits_get_model_t3amperr(master, db)    { return db.model_t3amperr; }
+func oifits_get_model_t3phi(master, db)       { return db.model_t3phi; }
+func oifits_get_model_t3phierr(master, db)    { return db.model_t3phierr; }
+func oifits_get_model_vis2data(master, db)    { return db.model_vis2data; }
+func oifits_get_model_vis2err(master, db)     { return db.model_vis2err; }
+func oifits_get_model_visamp(master, db)      { return db.model_visamp; }
+func oifits_get_model_visamperr(master, db)   { return db.model_visamperr; }
+func oifits_get_model_visphi(master, db)      { return db.model_visphi; }
+func oifits_get_model_visphierr(master, db)   { return db.model_visphierr; }
 
 func oifits_get_eff_wave(master, db)
 {
@@ -3175,151 +3239,171 @@ _OIFITS_CLASSDEF_WAVELENGTH_2 = _OIFITS_CLASSDEF_WAVELENGTH_1;
 /*----------------------------------------*/
 
 _OIFITS_CLASSDEF_VIS_1 = \
-["0 OI_REVN    1I -   revision number of the table definition",
- "0 DATE-OBS   1A -   UTC start date of observations",
- "1 ARRNAME    1A -   name of corresponding OI_ARRAY table",
- "0 INSNAME    1A -   name of corresponding OI_WAVELENGTH table",
- "2 TARGET_ID  1I -   target number as index into OI_TARGET table",
- "2 TIME       1D s   UTC time of observation",
- "2 MJD        1D day modified Julian Day",
- "2 INT_TIME   1D s   integration time",
- "2 VISAMP    -1D -   visibility amplitude",
- "2 VISAMPERR -1D -   error in visibility amplitude",
- "2 VISPHI    -1D deg visibility phase",
- "2 VISPHIERR -1D deg error in visibility phase",
- "2 UCOORD     1D m   U coordinate of the data",
- "2 VCOORD     1D m   V coordinate of the data",
- "2 STA_INDEX  2I -   station numbers contributing to the data",
- "2 FLAG      -1L -   flag"];
+["0 OI_REVN             1I -   revision number of the table definition",
+ "0 DATE-OBS            1A -   UTC start date of observations",
+ "1 ARRNAME             1A -   name of corresponding OI_ARRAY table",
+ "0 INSNAME             1A -   name of corresponding OI_WAVELENGTH table",
+ "2 TARGET_ID           1I -   target number as index into OI_TARGET table",
+ "2 TIME                1D s   UTC time of observation",
+ "2 MJD                 1D day modified Julian Day",
+ "2 INT_TIME            1D s   integration time",
+ "2 VISAMP             -1D -   visibility amplitude",
+ "2 VISAMPERR          -1D -   error in visibility amplitude",
+ "2 VISPHI             -1D deg visibility phase",
+ "2 VISPHIERR          -1D deg error in visibility phase",
+ "2 UCOORD              1D m   U coordinate of the data",
+ "2 VCOORD              1D m   V coordinate of the data",
+ "2 STA_INDEX           2I -   station numbers contributing to the data",
+ "2 FLAG               -1L -   flag",
+ "3 NS_MODEL_VISAMP    -1D -   model of VISAMP",
+ "3 NS_MODEL_VISAMPERR -1D -   model of VISAMPERR",
+ "3 NS_MODEL_VISPHI    -1D deg model of VISPHI",
+ "3 NS_MODEL_VISPHIERR -1D deg model of VISPHIERR"];
 
 /*----------------------------------------*/
 /* OI_VIS CLASS DEFINITION (2ND REVISION) */
 /*----------------------------------------*/
 
 _OIFITS_CLASSDEF_VIS_2 = \
-["0 OI_REVN          1I -   revision number of the table definition",
- "0 DATE-OBS         1A -   UTC start date of observations",
- "0 ARRNAME          1A -   name of corresponding OI_ARRAY table",
- "0 INSNAME          1A -   name of corresponding OI_WAVELENGTH table",
- "1 CORRNAME         1A -   name of corresponding OI_CORR table",
- "1 AMPTYP           1A -   'absolute', 'differential', or 'correlated flux'",
- "1 PHITYP           1A -   'absolute', or 'differential'",
- "1 AMPORDER         1I -   polynomial fit order for differential chromatic amplitudes",
- "1 PHIORDER         1I -   polynomial fit order for differential chromatic phases",
- "2 TARGET_ID        1I -   target number as index into OI_TARGET table",
- "2 TIME             1D s   zero, for backward compatibility",
- "2 MJD              1D day modified Julian Day",
- "2 INT_TIME         1D s   integration time",
- "2 VISAMP          -1D -   visibility amplitude",
- "2 VISAMPERR       -1D -   error in visibility amplitude",
- "3 CORRINDX_VISAMP  1J -   index into correlation matrix for 1st VISAMP element",
- "2 VISPHI          -1D deg visibility phase",
- "2 VISPHIERR       -1D deg error in visibility phase",
- "3 CORRINDX_VISPHI  1J -   index into correlation matrix for 1st VISPHI element",
- "3 VISREFMAP       -2L -   matrix indicating, if true, which spectral channels were taken as reference for differential chromatic visibility computation",
- "3 RVIS            -1D -   real part of complex coherent flux",
- "3 RVISERR         -1D -   error on RVIS",
- "3 CORRINDX_RVIS    1J -   index into correlation matrix for 1st RVIS element",
- "3 IVIS            -1D -   imaginary part of complex coherent flux",
- "3 IVISERR         -1D -   error on IVIS",
- "3 CORRINDX_IVIS    1J -   index into correlation matrix for 1st IVIS element",
- "2 UCOORD           1D m   U coordinate of the data",
- "2 VCOORD           1D m   V coordinate of the data",
- "2 STA_INDEX        2I -   station numbers contributing to the data",
- "2 FLAG            -1L -   flag"];
+["0 OI_REVN             1I -   revision number of the table definition",
+ "0 DATE-OBS            1A -   UTC start date of observations",
+ "0 ARRNAME             1A -   name of corresponding OI_ARRAY table",
+ "0 INSNAME             1A -   name of corresponding OI_WAVELENGTH table",
+ "1 CORRNAME            1A -   name of corresponding OI_CORR table",
+ "1 AMPTYP              1A -   'absolute', 'differential', or 'correlated flux'",
+ "1 PHITYP              1A -   'absolute', or 'differential'",
+ "1 AMPORDER            1I -   polynomial fit order for differential chromatic amplitudes",
+ "1 PHIORDER            1I -   polynomial fit order for differential chromatic phases",
+ "2 TARGET_ID           1I -   target number as index into OI_TARGET table",
+ "2 TIME                1D s   zero, for backward compatibility",
+ "2 MJD                 1D day modified Julian Day",
+ "2 INT_TIME            1D s   integration time",
+ "2 VISAMP             -1D -   visibility amplitude",
+ "2 VISAMPERR          -1D -   error in visibility amplitude",
+ "3 CORRINDX_VISAMP     1J -   index into correlation matrix for 1st VISAMP element",
+ "2 VISPHI             -1D deg visibility phase",
+ "2 VISPHIERR          -1D deg error in visibility phase",
+ "3 CORRINDX_VISPHI     1J -   index into correlation matrix for 1st VISPHI element",
+ "3 VISREFMAP          -2L -   matrix indicating, if true, which spectral channels were taken as reference for differential chromatic visibility computation",
+ "3 RVIS               -1D -   real part of complex coherent flux",
+ "3 RVISERR            -1D -   error on RVIS",
+ "3 CORRINDX_RVIS       1J -   index into correlation matrix for 1st RVIS element",
+ "3 IVIS               -1D -   imaginary part of complex coherent flux",
+ "3 IVISERR            -1D -   error on IVIS",
+ "3 CORRINDX_IVIS       1J -   index into correlation matrix for 1st IVIS element",
+ "2 UCOORD              1D m   U coordinate of the data",
+ "2 VCOORD              1D m   V coordinate of the data",
+ "2 STA_INDEX           2I -   station numbers contributing to the data",
+ "2 FLAG               -1L -   flag",
+ "3 NS_MODEL_VISAMP    -1D -   model of VISAMP",
+ "3 NS_MODEL_VISAMPERR -1D -   model of VISAMPERR",
+ "3 NS_MODEL_VISPHI    -1D deg model of VISPHI",
+ "3 NS_MODEL_VISPHIERR -1D deg model of VISPHIERR"];
 
 /*-----------------------------------------*/
 /* OI_VIS2 CLASS DEFINITION (1ST REVISION) */
 /*-----------------------------------------*/
 
 _OIFITS_CLASSDEF_VIS2_1 = \
-["0 OI_REVN    1I -   revision number of the table definition",
- "0 DATE-OBS   1A -   UTC start date of observations",
- "1 ARRNAME    1A -   name of corresponding OI_ARRAY table",
- "0 INSNAME    1A -   name of corresponding OI_WAVELENGTH table",
- "2 TARGET_ID  1I -   target number as index into OI_TARGET table",
- "2 TIME       1D s   UTC time of observation",
- "2 MJD        1D day modified Julian Day",
- "2 INT_TIME   1D s   integration time",
- "2 VIS2DATA  -1D -   squared visibility",
- "2 VIS2ERR   -1D -   error in squared visibility",
- "2 UCOORD     1D m   U coordinate of the data",
- "2 VCOORD     1D m   V coordinate of the data",
- "2 STA_INDEX  2I -   station numbers contributing to the data",
- "2 FLAG      -1L -   flag"];
+["0 OI_REVN             1I -   revision number of the table definition",
+ "0 DATE-OBS            1A -   UTC start date of observations",
+ "1 ARRNAME             1A -   name of corresponding OI_ARRAY table",
+ "0 INSNAME             1A -   name of corresponding OI_WAVELENGTH table",
+ "2 TARGET_ID           1I -   target number as index into OI_TARGET table",
+ "2 TIME                1D s   UTC time of observation",
+ "2 MJD                 1D day modified Julian Day",
+ "2 INT_TIME            1D s   integration time",
+ "2 VIS2DATA           -1D -   squared visibility",
+ "2 VIS2ERR            -1D -   error in squared visibility",
+ "2 UCOORD              1D m   U coordinate of the data",
+ "2 VCOORD              1D m   V coordinate of the data",
+ "2 STA_INDEX           2I -   station numbers contributing to the data",
+ "2 FLAG               -1L -   flag",
+ "3 NS_MODEL_VIS2DATA  -1D -   model of VIS2DATA",
+ "3 NS_MODEL_VIS2ERR   -1D -   model of VIS2ERR"];
 
 /*-----------------------------------------*/
 /* OI_VIS2 CLASS DEFINITION (2ND REVISION) */
 /*-----------------------------------------*/
 
 _OIFITS_CLASSDEF_VIS2_2 = \
-["0 OI_REVN            1I -   revision number of the table definition",
- "0 DATE-OBS           1A -   UTC start date of observations",
- "0 ARRNAME            1A -   name of corresponding OI_ARRAY table",
- "0 INSNAME            1A -   name of corresponding OI_WAVELENGTH table",
- "1 CORRNAME           1A -   name of corresponding OI_CORR table",
- "2 TARGET_ID          1I -   target number as index into OI_TARGET table",
- "2 TIME               1D s   zero, for backward compatibility",
- "2 MJD                1D day modified Julian Day",
- "2 INT_TIME           1D s   integration time",
- "2 VIS2DATA          -1D -   squared visibility",
- "2 VIS2ERR           -1D -   error in squared visibility",
- "3 CORRINDX_VIS2DATA  1J -   index into correlation matrix for 1st VIS2DATA element",
- "2 UCOORD             1D m   U coordinate of the data",
- "2 VCOORD             1D m   V coordinate of the data",
- "2 STA_INDEX          2I -   station numbers contributing to the data",
- "2 FLAG              -1L -   flag"];
+["0 OI_REVN             1I -   revision number of the table definition",
+ "0 DATE-OBS            1A -   UTC start date of observations",
+ "0 ARRNAME             1A -   name of corresponding OI_ARRAY table",
+ "0 INSNAME             1A -   name of corresponding OI_WAVELENGTH table",
+ "1 CORRNAME            1A -   name of corresponding OI_CORR table",
+ "2 TARGET_ID           1I -   target number as index into OI_TARGET table",
+ "2 TIME                1D s   zero, for backward compatibility",
+ "2 MJD                 1D day modified Julian Day",
+ "2 INT_TIME            1D s   integration time",
+ "2 VIS2DATA           -1D -   squared visibility",
+ "2 VIS2ERR            -1D -   error in squared visibility",
+ "3 CORRINDX_VIS2DATA   1J -   index into correlation matrix for 1st VIS2DATA element",
+ "2 UCOORD              1D m   U coordinate of the data",
+ "2 VCOORD              1D m   V coordinate of the data",
+ "2 STA_INDEX           2I -   station numbers contributing to the data",
+ "2 FLAG               -1L -   flag",
+ "3 NS_MODEL_VIS2DATA  -1D -   model of VIS2DATA",
+ "3 NS_MODEL_VIS2ERR   -1D -   model of VIS2ERR"];
 
 /*---------------------------------------*/
 /* OI_T3 CLASS DEFINITION (1ST REVISION) */
 /*---------------------------------------*/
 
 _OIFITS_CLASSDEF_T3_1 = \
-["0 OI_REVN    1I -   revision number of the table definition",
- "0 DATE-OBS   1A -   UTC start date of observations",
- "1 ARRNAME    1A -   name of corresponding OI_ARRAY table",
- "0 INSNAME    1A -   name of corresponding OI_WAVELENGTH table",
- "2 TARGET_ID  1I -   target number as index into OI_TARGET table",
- "2 TIME       1D s   UTC time of observation",
- "2 MJD        1D day modified Julian Day",
- "2 INT_TIME   1D s   integration time",
- "2 T3AMP     -1D -   triple product amplitude",
- "2 T3AMPERR  -1D -   error in triple product amplitude",
- "2 T3PHI     -1D deg triple product phase",
- "2 T3PHIERR  -1D deg error in triple product phase",
- "2 U1COORD    1D m   U coordinate of baseline AB of the triangle",
- "2 V1COORD    1D m   V coordinate of baseline AB of the triangle",
- "2 U2COORD    1D m   U coordinate of baseline BC of the triangle",
- "2 V2COORD    1D m   V coordinate of baseline BC of the triangle",
- "2 STA_INDEX  3I -   station numbers contributing to the data",
- "2 FLAG      -1L -   flag"];
+["0 OI_REVN             1I -   revision number of the table definition",
+ "0 DATE-OBS            1A -   UTC start date of observations",
+ "1 ARRNAME             1A -   name of corresponding OI_ARRAY table",
+ "0 INSNAME             1A -   name of corresponding OI_WAVELENGTH table",
+ "2 TARGET_ID           1I -   target number as index into OI_TARGET table",
+ "2 TIME                1D s   UTC time of observation",
+ "2 MJD                 1D day modified Julian Day",
+ "2 INT_TIME            1D s   integration time",
+ "2 T3AMP              -1D -   triple product amplitude",
+ "2 T3AMPERR           -1D -   error in triple product amplitude",
+ "2 T3PHI              -1D deg triple product phase",
+ "2 T3PHIERR           -1D deg error in triple product phase",
+ "2 U1COORD             1D m   U coordinate of baseline AB of the triangle",
+ "2 V1COORD             1D m   V coordinate of baseline AB of the triangle",
+ "2 U2COORD             1D m   U coordinate of baseline BC of the triangle",
+ "2 V2COORD             1D m   V coordinate of baseline BC of the triangle",
+ "2 STA_INDEX           3I -   station numbers contributing to the data",
+ "2 FLAG               -1L -   flag",
+ "3 NS_MODEL_T3AMP     -1D -   model of T3AMP",
+ "3 NS_MODEL_T3AMPERR  -1D -   model of T3AMPERR",
+ "3 NS_MODEL_T3PHI     -1D deg model of T3PHI",
+ "3 NS_MODEL_T3PHIERR  -1D deg model of T3PHIERR"];
 
 /*---------------------------------------*/
 /* OI_T3 CLASS DEFINITION (2ND REVISION) */
 /*---------------------------------------*/
 
 _OIFITS_CLASSDEF_T3_2 = \
-["0 OI_REVN         1I -   revision number of the table definition",
- "0 DATE-OBS        1A -   UTC start date of observations",
- "0 ARRNAME         1A -   name of corresponding OI_ARRAY table",
- "0 INSNAME         1A -   name of corresponding OI_WAVELENGTH table",
- "1 CORRNAME        1A -   name of corresponding OI_CORR table",
- "2 TARGET_ID       1I -   target number as index into OI_TARGET table",
- "2 TIME            1D s   zero, for backward compatibility",
- "2 MJD             1D day modified Julian Day",
- "2 INT_TIME        1D s   integration time",
- "2 T3AMP          -1D -   triple product amplitude",
- "2 T3AMPERR       -1D -   error in triple product amplitude",
- "3 CORRINDX_T3AMP  1J -   index into correlation matrix for 1st T3AMP element",
- "2 T3PHI          -1D deg triple product phase",
- "2 T3PHIERR       -1D deg error in triple product phase",
- "3 CORRINDX_T3PHI  1J -   index into correlation matrix for 1st T3PHI element",
- "2 U1COORD         1D m   U coordinate of baseline AB of the triangle",
- "2 V1COORD         1D m   V coordinate of baseline AB of the triangle",
- "2 U2COORD         1D m   U coordinate of baseline BC of the triangle",
- "2 V2COORD         1D m   V coordinate of baseline BC of the triangle",
- "2 STA_INDEX       3I -   station numbers contributing to the data",
- "2 FLAG           -1L -   flag"];
+["0 OI_REVN             1I -   revision number of the table definition",
+ "0 DATE-OBS            1A -   UTC start date of observations",
+ "0 ARRNAME             1A -   name of corresponding OI_ARRAY table",
+ "0 INSNAME             1A -   name of corresponding OI_WAVELENGTH table",
+ "1 CORRNAME            1A -   name of corresponding OI_CORR table",
+ "2 TARGET_ID           1I -   target number as index into OI_TARGET table",
+ "2 TIME                1D s   zero, for backward compatibility",
+ "2 MJD                 1D day modified Julian Day",
+ "2 INT_TIME            1D s   integration time",
+ "2 T3AMP              -1D -   triple product amplitude",
+ "2 T3AMPERR           -1D -   error in triple product amplitude",
+ "3 CORRINDX_T3AMP      1J -   index into correlation matrix for 1st T3AMP element",
+ "2 T3PHI              -1D deg triple product phase",
+ "2 T3PHIERR           -1D deg error in triple product phase",
+ "3 CORRINDX_T3PHI      1J -   index into correlation matrix for 1st T3PHI element",
+ "2 U1COORD             1D m   U coordinate of baseline AB of the triangle",
+ "2 V1COORD             1D m   V coordinate of baseline AB of the triangle",
+ "2 U2COORD             1D m   U coordinate of baseline BC of the triangle",
+ "2 V2COORD             1D m   V coordinate of baseline BC of the triangle",
+ "2 STA_INDEX           3I -   station numbers contributing to the data",
+ "2 FLAG               -1L -   flag",
+ "3 NS_MODEL_T3AMP     -1D -   model of T3AMP",
+ "3 NS_MODEL_T3AMPERR  -1D -   model of T3AMPERR",
+ "3 NS_MODEL_T3PHI     -1D deg model of T3PHI",
+ "3 NS_MODEL_T3PHIERR  -1D deg model of T3PHIERR"];
 
 /*-----------------------------------------*/
 /* OI_FLUX CLASS DEFINITION (1ST REVISION) */
@@ -3553,7 +3637,11 @@ func _oifits_init
                         j, tablename);
         }
         member = strchar(convert(strchar(keyword)(1:-1)));
-        if (member == "oi_revn") member = "revn";
+        if (member == "oi_revn") {
+          member = "revn"; // strip "oi_" prefix
+        } else if (strpart(member, 1:9) == "ns_model_") {
+          member = strpart(member, 4:0); // strip "ns_" prefix from "ns_model_*"
+        }
         if (strpart(member, -5:0) == "_units") {
           error, swrite(format="illegal member name '%s' at line %d of table %s",
                         member, j, tablename);

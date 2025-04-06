@@ -14,6 +14,11 @@ None.
 
 ### Added
 
+- Optional columns `NS_MODEL_$x` in OIFITS data-blocks `OI_VIS`, `OI_VIS2`, and `OI_T3`
+  with model of the data in column `$x` can be loaded/saved from/to OIFITS files. In the
+  object storing OIFITS data, these columns correspond to members with the same name in
+  lower case letters with the `NS_` prefix suppressed.
+
 - New routines: `oifits_select_target`, `oifits_warn`, `oifits_list_targets`, and
   `oifits_list_instruments`.
 

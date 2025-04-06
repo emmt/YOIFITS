@@ -86,6 +86,16 @@ To query the fields of `OI_VIS`, `OI_VIS2` or `OI_T3` data-blocks:
 * `oifits_get_v1coord`: get v coordinate of baseline AB of the triangle (m)
 * `oifits_get_u2coord`: get u coordinate of baseline BC of the triangle (m)
 * `oifits_get_v2coord`: get v coordinate of baseline BC of the triangle (m)
+* `oifits_get_model_visamp`: get model of visibility amplitude
+* `oifits_get_model_visamperr`: get model of error in visibility amplitude
+* `oifits_get_model_visphi`: get model of visibility phase (deg)
+* `oifits_get_model_visphierr`: get model of error in visibility phase (deg)
+* `oifits_get_model_vis2data`: get model of squared visibility
+* `oifits_get_model_vis2err`: get model of error in squared visibility
+* `oifits_get_model_t3amp`: get model of triple-product amplitude
+* `oifits_get_model_t3amperr`: get model of error in triple product amplitude
+* `oifits_get_model_t3phi`: get model of triple-product phase (deg)
+* `oifits_get_model_t3phierr`: get model of error in triple product phase (deg)
 
 To query fields of `OI_ARRAY` data block:
 * `oifits_get_arrname`: get identifier of corresponding OI_ARRAY

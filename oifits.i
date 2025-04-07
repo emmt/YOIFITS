@@ -2128,14 +2128,13 @@ func oifits_load(filename, quiet=, errmode=)
   return oifits_update(master, errmode=errmode, quiet=1n);
 }
 
-func oifits_save(master, filename, revn=, overwrite=,
-                 comment=, history=)
-/* DOCUMENT oifits_save, master, filename;
+func oifits_save(master, dest, revn=, overwrite=, comment=, history=)
+/* DOCUMENT oifits_save, master, dest;
 
-     Write optical interferometric data contained in instance MASTER into
-     FILENAME in OI-FITS format.  That is to say the OI_TARGET (only one
-     otherwise an error is produced) and eventual OI_ARRAY, OI_WAVELENGTH,
-     OI_VIS, OI_VIS2 and OI_T3 data.
+     Write optical interferometric data contained in instance MASTER into DEST in OI-FITS
+     format. That is to say the OI_TARGET (only one otherwise an error is produced) and
+     eventual OI_ARRAY, OI_WAVELENGTH, OI_VIS, OI_VIS2 and OI_T3 data. DEST is assumed to
+     be a filename if it is a string or a FITS handle otherwise
 
      Keyword REVN can be used to specify the revision number of the OI-FITS
 
@@ -2148,11 +2147,17 @@ func oifits_save(master, filename, revn=, overwrite=,
   if (! is_hash(master)) error, " expected hash table for first argument";
   oifits_update, master, errmode=1, revn=revn;
 
-  /* Create new FITS file with empty primary HDU. */
-  grow, comment, "FITS (Flexible Image Transport System) format defined in Astronomy and Astrophysics Supplement Series v44/p363, v44/p371, v73/p359, v73/p365", "Contact the NASA Science Office of Standards and Technology for the FITS Definition document #100 and other FITS information.", "Binary Extensions conform to OI-DATA standard for exchange of optical interferometry data currently described at http://www.mrao.cam.ac.uk/~jsy1001/exchange/.", "This file was created by Yeti/Yorick code from Centre de Recherche Astrophysique de Lyon (CRAL).";
-  fh = fits_create(filename, bitpix=8, overwrite=overwrite, extend=1,
-                   history=history, comment=comment);
-  fits_write_header, fh;
+  /* FITS handle. */
+  local fh;
+  if (structof(dest) == string) {
+    /* Create new FITS file with empty primary HDU. */
+    grow, comment, "FITS (Flexible Image Transport System) format defined in Astronomy and Astrophysics Supplement Series v44/p363, v44/p371, v73/p359, v73/p365", "Contact the NASA Science Office of Standards and Technology for the FITS Definition document #100 and other FITS information.", "Binary Extensions conform to OI-DATA standard for exchange of optical interferometry data currently described at http://www.mrao.cam.ac.uk/~jsy1001/exchange/.", "This file was created by Yeti/Yorick code from Centre de Recherche Astrophysique de Lyon (CRAL).";
+    fh = fits_create(dest, bitpix=8, overwrite=overwrite, extend=1,
+                     history=history, comment=comment);
+    fits_write_header, fh;
+  } else {
+    eq_nocopy, fh, dest;
+  }
 
   /* Create a BINTABLE HDU for every OI_FITS datablocks. */
   db_list = master.__target;

@@ -6,13 +6,13 @@ OI-FITS data format.
 This file structure is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec).
 
-## Unreleased
+## Version 1.2.0 (2025-04-07)
 
 ### Added
 
 - Function `oifits_save` can create a new OI-FITS file if destination is specified as a
-  string (as before) or can append to an existing FITS file destination is specified as a
-  FITS handle.
+  string (as before) or can append to an existing FITS file if destination is specified as
+  a FITS handle.
 
 ## Version 1.1.0 (2025-04-06)
 
